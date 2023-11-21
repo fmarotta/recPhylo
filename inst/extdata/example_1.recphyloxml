@@ -1,0 +1,134 @@
+<recPhylo>
+	<spTree>
+		<phylogeny>
+			<clade>
+				<name>ABCD</name>
+				<clade>
+					<name>A</name>
+				</clade>
+				<clade>
+					<name>BCD</name>
+					<clade>
+						<name>B</name>
+					</clade>
+					<clade>
+						<name>CD</name>
+						<clade>
+							<name>C</name>
+						</clade>
+						<clade>
+							<name>D</name>
+						</clade>
+					</clade>
+				</clade>
+			</clade>
+		</phylogeny>
+	</spTree>
+	<recGeneTree>
+		<phylogeny>
+			<clade>
+				<name>gene 17</name>
+				<eventsRec>
+					<speciation speciesLocation="BCD"/>
+				</eventsRec>
+				<clade>
+					<name>gene 5</name>
+					<eventsRec>
+						<duplication speciesLocation="B"/>
+					</eventsRec>
+					<clade>
+						<name>gene 3</name>
+						<eventsRec>
+							<branchingOut speciesLocation="B"/>
+						</eventsRec>
+						<clade>
+							<name>gene 1</name>
+							<eventsRec>
+								<transferBack destinationSpecies="B"/>
+								<leaf speciesLocation="A"/>
+							</eventsRec>
+						</clade>
+						<clade>
+							<name>gene 2</name>
+							<eventsRec>
+								<leaf speciesLocation="B"/>
+							</eventsRec>
+						</clade>
+					</clade>
+					<clade>
+						<name>gene 4</name>
+						<eventsRec>
+							<leaf speciesLocation="B"/>
+						</eventsRec>
+					</clade>
+				</clade>
+				<clade>
+					<name>gene 16</name>
+					<eventsRec>
+						<duplication speciesLocation="CD"/>
+					</eventsRec>
+					<clade>
+						<name>gene 12</name>
+						<eventsRec>
+							<duplication speciesLocation="CD"/>
+						</eventsRec>
+						<clade>
+							<name>gene 8</name>
+							<eventsRec>
+								<speciation speciesLocation="CD"/>
+							</eventsRec>
+							<clade>
+								<name>gene 6</name>
+								<eventsRec>
+									<leaf speciesLocation="C"/>
+								</eventsRec>
+							</clade>
+							<clade>
+								<name>gene 7</name>
+								<eventsRec>
+									<leaf speciesLocation="D"/>
+								</eventsRec>
+							</clade>
+						</clade>
+						<clade>
+							<name>gene 11</name>
+							<eventsRec>
+								<speciation speciesLocation="CD"/>
+							</eventsRec>
+							<clade>
+								<name>gene 9</name>
+								<eventsRec>
+									<leaf speciesLocation="C"/>
+								</eventsRec>
+							</clade>
+							<clade>
+								<name>gene 10</name>
+								<eventsRec>
+									<leaf speciesLocation="D"/>
+								</eventsRec>
+							</clade>
+						</clade>
+					</clade>
+					<clade>
+						<name>gene 15</name>
+						<eventsRec>
+							<speciation speciesLocation="CD"/>
+						</eventsRec>
+						<clade>
+							<name>gene 13</name>
+							<eventsRec>
+								<leaf speciesLocation="C"/>
+							</eventsRec>
+						</clade>
+						<clade>
+							<name>gene 14</name>
+							<eventsRec>
+								<loss speciesLocation="D"/>
+							</eventsRec>
+						</clade>
+					</clade>
+				</clade>
+			</clade>
+		</phylogeny>
+	</recGeneTree>
+</recPhylo>
