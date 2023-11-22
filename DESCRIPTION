@@ -2,10 +2,22 @@ Package: recPhyloParse
 Type: Package
 Title: Parse RecPhyloXML Files
 Version: 0.1.0
-Author: Who wrote it
-Maintainer: The package maintainer <yourself@somewhere.net>
-Description: More about what it does (maybe more than one line)
-    Use four spaces when indenting paragraphs within the Description.
-License: What license is it under?
+Author: person("Federico", "Marotta", email = "federico.marotta@embl.de",
+    role = c("aut", "cre"))
+Maintainer: Federico Marotta <federico.marotta@embl.de>
+Description: Imports reconciliated phylogenetic trees (recPhyloXML) as R6
+    objects and provides convenient methods to convert them to data.frames.
+    All the attributes and coordinates needed for plotting the trees are
+    calculated, so that standard ggplot2 geoms can be used.
+URL: https://github.com/fmarotta/recPhyloParse
+BugReports: https://github.com/fmarotta/recPhyloParse/issues
+Imports:
+    xml2,
+    R6
+Suggests:
+    testthat
+License: MIT + file LICENSE
 Encoding: UTF-8
 LazyData: true
+Roxygen: list(markdown = TRUE)
+RoxygenNote: 7.2.3
