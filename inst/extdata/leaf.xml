@@ -1,0 +1,25 @@
+<recPhylo>
+	<spTree>
+		<phylogeny>
+			<clade>
+				<name>A</name>
+				<clade>
+					<name>B</name>
+				</clade>
+				<clade>
+					<name>C</name>
+				</clade>
+			</clade>
+		</phylogeny>
+	</spTree>
+	<recGeneTree>
+		<phylogeny>
+			<clade>
+				<name>gene 1</name>
+				<eventsRec>
+					<leaf speciesLocation="C"/>
+				</eventsRec>
+			</clade>
+		</phylogeny>
+	</recGeneTree>
+</recPhylo>

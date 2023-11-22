@@ -1,0 +1,62 @@
+<recPhylo>
+ <spTree>
+   <phylogeny>
+     <clade>
+       <name>n30</name>
+       <clade>
+         <name>S.pneumoniae</name>
+       </clade>
+       <clade>
+         <name>B.subtilis</name>
+       </clade>
+     </clade>
+   </phylogeny>
+ </spTree>
+ <recGeneTree>
+   <phylogeny rooted="true">
+     <clade>
+       <name>n8</name>
+       <eventsRec>
+         <speciation speciesLocation="n30"></speciation>
+       </eventsRec>
+       <clade>
+         <name>LOSS</name>
+         <eventsRec>
+           <loss speciesLocation="S.pneumoniae"></loss>
+         </eventsRec>
+       </clade>
+       <clade>
+         <name>n7</name>
+         <eventsRec>
+           <duplication speciesLocation="B.subtilis"></duplication>
+         </eventsRec>
+         <clade>
+           <name>n5</name>
+           <eventsRec>
+           <branchingOut speciesLocation="B.subtilis"></branchingOut>
+           </eventsRec>
+           <clade>
+             <name>gA</name>
+             <eventsRec>
+               <leaf speciesLocation="B.subtilis" geneName="gA"></leaf>
+             </eventsRec>
+           </clade>
+           <clade>
+             <name>gB</name>
+             <eventsRec>
+               <transferBack destinationSpecies="S.pneumoniae"></transferBack>
+               <leaf speciesLocation="S.pneumoniae" geneName="gB"></leaf>
+             </eventsRec>
+           </clade>
+         </clade>
+         <clade>
+         <name>gC</name>
+         <eventsRec>
+           <leaf speciesLocation="B.subtilis" geneName="gC"></leaf>
+         </eventsRec>
+         </clade>
+       </clade>
+     </clade>
+   </phylogeny>
+ </recGeneTree>
+</recPhylo>

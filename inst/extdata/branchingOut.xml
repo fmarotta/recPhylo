@@ -1,0 +1,50 @@
+<recPhylo>
+	<spTree>
+		<phylogeny>
+			<clade>
+				<name>A</name>
+				<clade>
+					<name>B</name>
+				</clade>
+				<clade>
+					<name>C</name>
+				</clade>
+			</clade>
+		</phylogeny>
+	</spTree>
+	<recGeneTree>
+		<phylogeny>
+			<clade>
+				<name>gene 1-2</name>
+				<eventsRec>
+					<speciation speciesLocation="A"/>
+				</eventsRec>
+  			<clade>
+  				<name>gene 1</name>
+  				<eventsRec>
+  					<leaf speciesLocation="C"/>
+  				</eventsRec>
+  			</clade>
+  			<clade>
+  				<name>gene father</name>
+  				<eventsRec>
+  					<branchingOut speciesLocation="B"/>
+  				</eventsRec>
+    			<clade>
+    				<name>gene 2</name>
+    				<eventsRec>
+    					<leaf speciesLocation="B"/>
+    				</eventsRec>
+    			</clade>
+    			<clade>
+    				<name>gene 3</name>
+    				<eventsRec>
+    				  <transferBack destinationSpecies="B"/>
+    					<leaf speciesLocation="C"/>
+    				</eventsRec>
+    			</clade>
+  			</clade>
+			</clade>
+		</phylogeny>
+	</recGeneTree>
+</recPhylo>

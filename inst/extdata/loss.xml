@@ -1,0 +1,37 @@
+<recPhylo>
+	<spTree>
+		<phylogeny>
+			<clade>
+				<name>A</name>
+				<clade>
+					<name>B</name>
+				</clade>
+				<clade>
+					<name>C</name>
+				</clade>
+			</clade>
+		</phylogeny>
+	</spTree>
+	<recGeneTree>
+		<phylogeny>
+			<clade>
+				<name>gene 1-2</name>
+				<eventsRec>
+					<speciation speciesLocation="A"/>
+				</eventsRec>
+  			<clade>
+  				<name>gene 1</name>
+  				<eventsRec>
+  					<leaf speciesLocation="C"/>
+  				</eventsRec>
+  			</clade>
+  			<clade>
+  				<name>lost gene</name>
+  				<eventsRec>
+  					<loss speciesLocation="B"/>
+  				</eventsRec>
+  			</clade>
+			</clade>
+		</phylogeny>
+	</recGeneTree>
+</recPhylo>
