@@ -176,6 +176,9 @@ RecPhylo <- R6::R6Class("RecPhylo",
       cat("\n<recGeneNodes>\n")
       str(self$recGeneNodes)
     },
+    summary = function() {
+      cat("RecPhylo object with ", nrow(self$spNodes), " species (", sum(self$spNodes$is_leaf), " leaves) and ", sum(self$recGeneNodes$event_type == "leaf"), " genes (", nrow(self$recGeneNodes), " events)\n", sep = "")
+    },
     plot = function() {
       ggplot() +
         geom_line(data = self$spEdges, aes(x, y, group = group)) +
@@ -183,7 +186,7 @@ RecPhylo <- R6::R6Class("RecPhylo",
         geom_text(data = self$spNodes, aes(x_coord, y_coord, label = name)) +
         geom_point(data = self$recGeneNodes, aes(x, y)) +
         geom_line(data = self$recGeneEdges, aes(x, y, group = group, color = gsub("l+$", "", lineage), linetype = event_type == "loss_v"), show.legend = F) +
-        geom_point(data = data.frame(x = -private$config$x_padding, y = 0), aes(x, y), alpha = 0) +
+        geom_point(data = data.frame(x = -private$config$x_padding, y = private$config$branch_length_scale), aes(x, y), alpha = 0) +
         # coord_polar() +
         # coord_flip() +
         # theme_void() +
