@@ -169,11 +169,11 @@ RecPhylo <- R6::R6Class("RecPhylo",
       # TODO. more tricky, may entail flipping species as well.
     },
     print = function() {
-      cat("<config>")
+      cat("<config>\n")
       str(private$config)
-      cat("\n<spNodes>")
+      cat("\n<spNodes>\n")
       str(self$spNodes)
-      cat("\n<recGeneNodes>")
+      cat("\n<recGeneNodes>\n")
       str(self$recGeneNodes)
     },
     plot = function() {
@@ -383,57 +383,3 @@ RecPhylo <- R6::R6Class("RecPhylo",
     }
   )
 )
-
-# with branch_length
-ex <- RecPhylo$new("inst/extdata/example_1.recphyloxml", branch_length_scale = 3, x_padding = 3, use_y_shift = T, use_branch_length = "branch_length")
-plot(ex)
-
-ex$redraw(branch_length_scale = 4, x_padding = 3, use_y_shift = T, use_branch_length = "branch_length")
-plot(ex)
-
-ex$redraw(branch_length_scale = 5, x_padding = 3, use_y_shift = T, use_branch_length = "branch_length")
-plot(ex)
-
-ex$redraw(branch_length_scale = 6, x_padding = 3, use_y_shift = T, use_branch_length = "branch_length")
-plot(ex)
-
-# y_shift = F
-ex$redraw(branch_length_scale = 3, x_padding = 3, use_y_shift = F, use_branch_length = "branch_length")
-plot(ex)
-
-ex$redraw(branch_length_scale = 4, x_padding = 3, use_y_shift = F, use_branch_length = "branch_length")
-plot(ex)
-
-ex$redraw(branch_length_scale = 5, x_padding = 3, use_y_shift = F, use_branch_length = "branch_length")
-plot(ex)
-
-ex$redraw(branch_length_scale = 6, x_padding = 3, use_y_shift = F, use_branch_length = "branch_length")
-plot(ex)
-
-
-
-# withOUT branch_length
-ex$redraw(branch_length_scale = 3, x_padding = 3, use_y_shift = T, use_branch_length = F)
-plot(ex)
-
-ex$redraw(branch_length_scale = 4, x_padding = 3, use_y_shift = T, use_branch_length = F)
-plot(ex)
-
-ex$redraw(branch_length_scale = 5, x_padding = 3, use_y_shift = T, use_branch_length = F)
-plot(ex)
-
-ex$redraw(branch_length_scale = 6, x_padding = 3, use_y_shift = T, use_branch_length = F)
-plot(ex)
-
-# y_shift = F
-ex$redraw(branch_length_scale = 3, x_padding = 3, use_y_shift = F, use_branch_length = F)
-plot(ex)
-
-ex$redraw(branch_length_scale = 4, x_padding = 3, use_y_shift = F, use_branch_length = F)
-plot(ex)
-
-ex$redraw(branch_length_scale = 5, x_padding = 3, use_y_shift = F, use_branch_length = F)
-plot(ex)
-
-ex$redraw(branch_length_scale = 6, x_padding = 3, use_y_shift = F, use_branch_length = F)
-plot(ex)
