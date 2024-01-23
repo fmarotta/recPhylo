@@ -1,14 +1,14 @@
 Package: recPhyloParse
 Type: Package
 Title: Parse RecPhyloXML Files
-Version: 0.1.0
+Version: 0.2.0
 Author: person("Federico", "Marotta", email = "federico.marotta@embl.de",
     role = c("aut", "cre"))
 Maintainer: Federico Marotta <federico.marotta@embl.de>
 Description: Imports reconciliated phylogenetic trees (recPhyloXML) as R6
-    objects and provides convenient methods to convert them to data.frames.
-    All the attributes and coordinates needed for plotting the trees are
-    calculated, so that standard ggplot2 geoms can be used.
+    objects and converts them to `data.frame`s. All the attributes and
+    coordinates needed for plotting the trees are calculated, so that standard
+    ggplot2 geoms can be used.
 URL: https://github.com/fmarotta/recPhyloParse
 BugReports: https://github.com/fmarotta/recPhyloParse/issues
 Imports:
