@@ -3,25 +3,25 @@ get_spedges <- function(splist) {
   if (splist$is_leaf == TRUE) {
     data.frame(  # The pipe closed at one end
       group = paste(splist$name, "close"),
-      x = c(splist$x_coord - splist$half_x_thickness, splist$x_coord - splist$half_x_thickness, splist$x_coord + splist$half_x_thickness, splist$x_coord + splist$half_x_thickness),
-      y = c(splist$y_coord - splist$half_y_thickness, splist$y_coord, splist$y_coord, splist$y_coord - splist$half_y_thickness)
+      x = c(splist$x - splist$half_x_thickness, splist$x - splist$half_x_thickness, splist$x + splist$half_x_thickness, splist$x + splist$half_x_thickness),
+      y = c(splist$y - splist$half_y_thickness, splist$y, splist$y, splist$y - splist$half_y_thickness)
     )
   } else {
     rbind(
       data.frame(  # The inner 'U'
         group = paste(splist$name, "in"),
-        x = c(splist$left_child$x_coord + splist$left_child$half_x_thickness, splist$left_child$x_coord + splist$left_child$half_x_thickness, splist$right_child$x_coord - splist$right_child$half_x_thickness, splist$right_child$x_coord - splist$right_child$half_x_thickness),
-        y = c(splist$left_child$y_coord - splist$left_child$half_y_thickness, splist$y_coord + splist$half_y_thickness + splist$y_shift, splist$y_coord + splist$half_y_thickness + splist$y_shift, splist$right_child$y_coord - splist$right_child$half_y_thickness)
+        x = c(splist$left_child$x + splist$left_child$half_x_thickness, splist$left_child$x + splist$left_child$half_x_thickness, splist$right_child$x - splist$right_child$half_x_thickness, splist$right_child$x - splist$right_child$half_x_thickness),
+        y = c(splist$left_child$y - splist$left_child$half_y_thickness, splist$y + splist$half_y_thickness + splist$y_shift, splist$y + splist$half_y_thickness + splist$y_shift, splist$right_child$y - splist$right_child$half_y_thickness)
       ),
       data.frame(  # The left shoulder
         group = paste(splist$name, "outl"),
-        x = c(splist$left_child$x_coord - splist$left_child$half_x_thickness, splist$left_child$x_coord - splist$left_child$half_x_thickness, splist$x_coord - splist$half_x_thickness),
-        y = c(splist$left_child$y_coord - splist$left_child$half_y_thickness, splist$y_coord - splist$half_y_thickness + splist$y_shift, splist$y_coord - splist$half_y_thickness + splist$y_shift)
+        x = c(splist$left_child$x - splist$left_child$half_x_thickness, splist$left_child$x - splist$left_child$half_x_thickness, splist$x - splist$half_x_thickness),
+        y = c(splist$left_child$y - splist$left_child$half_y_thickness, splist$y - splist$half_y_thickness + splist$y_shift, splist$y - splist$half_y_thickness + splist$y_shift)
       ),
       data.frame(  # The right shoulder
         group = paste(splist$name, "outr"),
-        x = c(splist$x_coord + splist$half_x_thickness, splist$right_child$x_coord + splist$right_child$half_x_thickness, splist$right_child$x_coord + splist$right_child$half_x_thickness),
-        y = c(splist$y_coord - splist$half_y_thickness + splist$y_shift, splist$y_coord - splist$half_y_thickness + splist$y_shift, splist$right_child$y_coord - splist$right_child$half_y_thickness)
+        x = c(splist$x + splist$half_x_thickness, splist$right_child$x + splist$right_child$half_x_thickness, splist$right_child$x + splist$right_child$half_x_thickness),
+        y = c(splist$y - splist$half_y_thickness + splist$y_shift, splist$y - splist$half_y_thickness + splist$y_shift, splist$right_child$y - splist$right_child$half_y_thickness)
       ),
       get_spedges(splist$left_child),
       get_spedges(splist$right_child)

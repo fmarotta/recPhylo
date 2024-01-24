@@ -2,7 +2,7 @@ as.data.frame.recphylo_spTree <- function(l) {
   if (is.null(l)) {
     return(NULL)
   }
-  fields <- c("name", "parent", "side", "is_leaf", "x_coord", "y_coord", "half_x_thickness", "half_y_thickness", "branch_height", "min_branch_height", "y_shift")
+  fields <- c("name", "parent", "side", "is_leaf", "x", "y", "half_x_thickness", "half_y_thickness", "branch_height", "min_branch_height", "y_shift")
   rbind(
     as.data.frame(l[fields]),
     as.data.frame(l$left_child),
@@ -21,6 +21,8 @@ as.data.frame.recphylo_recGeneTree <- function(l) {
     as.data.frame(l$right_child)
   )
 }
+
+# TODO: https://arxiv.org/pdf/2008.08960.pdf
 
 #' @export
 RecPhylo <- R6::R6Class("RecPhylo",
@@ -55,7 +57,7 @@ RecPhylo <- R6::R6Class("RecPhylo",
       }
       spRoot <- xml2::xml_find_first(private$recphylo_xml, "spTree//clade")
       gRoot <- xml2::xml_find_first(private$recphylo_xml, "recGeneTree//clade")
-      private$max_x = 0
+      private$max_x <- 0
       spList <- private$parse_sptree(spRoot, y_start = -private$config$branch_length_scale)
       gList <- private$parse_gtree(gRoot)
       self$spNodes <- as.data.frame(spList)
@@ -85,19 +87,23 @@ RecPhylo <- R6::R6Class("RecPhylo",
     },
     plot = function() {
       if (requireNamespace("ggplot2", quietly = T)) {
+        auxpoints <- data.frame(
+          x = c(-private$config$x_padding, self$spNodes[is.na(self$spNodes$parent), "x"]),
+          y = c(private$max_y + private$config$branch_length_scale, self$spNodes[is.na(self$spNodes$parent), "y"] - private$config$branch_length_scale)
+        )
         ggplot2::ggplot() +
           ggplot2::geom_line(data = self$spEdges, ggplot2::aes(x, y, group = group)) +
-          ggplot2::geom_point(data = self$spNodes, ggplot2::aes(x_coord, y_coord)) +
-          ggplot2::geom_text(data = self$spNodes, ggplot2::aes(x_coord, y_coord, label = name)) +
+          ggplot2::geom_point(data = self$spNodes, ggplot2::aes(x, y)) +
+          ggplot2::geom_text(data = self$spNodes, ggplot2::aes(x, y, label = name)) +
           ggplot2::geom_point(data = self$recGeneNodes, ggplot2::aes(x, y)) +
           ggplot2::geom_line(data = self$recGeneEdges, ggplot2::aes(x, y, group = group, color = gsub("l+$", "", lineage), linetype = event_type == "loss_v"), show.legend = F) +
-          ggplot2::geom_point(data = data.frame(x = -private$config$x_padding, y = 0), ggplot2::aes(x, y), alpha = 0) +
+          ggplot2::geom_point(data = auxpoints, ggplot2::aes(x, y), alpha = 0) +
           # coord_polar() +
           # coord_flip() +
           # theme_void() +
           NULL
       } else {
-        stop("Please install ggplot2 before using the plot() method.")
+        stop("Please install `ggplot2` before using the plot() method.")
       }
     }
   ),
@@ -105,6 +111,7 @@ RecPhylo <- R6::R6Class("RecPhylo",
     recphylo_xml = NULL,
     config = list(),
     max_x = 0,
+    max_y = 0,
     internal_events = list(),
     side = list(),
     branch_height = list(),
@@ -131,10 +138,10 @@ RecPhylo <- R6::R6Class("RecPhylo",
           branch_length <- 1
         }
         branch_length <- branch_length * private$config$branch_length_scale
-        y_coord <- y_start + branch_length
+        y <- y_start + branch_length
       } else {
         branch_length <- private$config$branch_length_scale
-        y_coord <- 0
+        y <- 0
       }
       branch_height <- branch_length - half_y_thickness - parent_half_y_thickness
       if (branch_height <= 0) {
@@ -145,23 +152,23 @@ RecPhylo <- R6::R6Class("RecPhylo",
         # It's an extant so we can have gene leaves but not speciations
         # The number of events is the x_thickness
         left_child <- right_child <- NULL
-        x_coord <- private$max_x + half_x_thickness
-        private$max_x <- x_coord + half_x_thickness + private$config$x_padding
+        x <- private$max_x + half_x_thickness
+        private$max_x <- x + half_x_thickness + private$config$x_padding
         is_leaf <- TRUE
         y_shift <- 0
       } else if (length(children) == 2) {
-        left_child <- private$parse_sptree(children[[1]], parent = name, side = "left", y_start = y_coord)
-        right_child <- private$parse_sptree(children[[2]], parent = name, side = "right", y_start = y_coord)
-        x_coord <- (left_child$x_coord + left_child$half_x_thickness + right_child$x_coord - right_child$half_x_thickness) / 2
+        left_child <- private$parse_sptree(children[[1]], parent = name, side = "left", y_start = y)
+        right_child <- private$parse_sptree(children[[2]], parent = name, side = "right", y_start = y)
+        x <- (left_child$x + left_child$half_x_thickness + right_child$x - right_child$half_x_thickness) / 2
         is_leaf <- FALSE
         if (!is.character(private$config$use_branch_length)) {
-          y_coord <- min(left_child$y_coord, right_child$y_coord) - private$config$branch_length_scale
-          left_child$branch_height <- left_child$y_coord - y_coord - half_y_thickness - left_child$half_y_thickness
-          right_child$branch_height <- right_child$y_coord - y_coord - half_y_thickness - right_child$half_y_thickness
+          y <- min(left_child$y, right_child$y) - private$config$branch_length_scale
+          left_child$branch_height <- left_child$y - y - half_y_thickness - left_child$half_y_thickness
+          right_child$branch_height <- right_child$y - y - half_y_thickness - right_child$half_y_thickness
           private$branch_height[[left_child$name]] <- left_child$branch_height
           private$branch_height[[right_child$name]] <- right_child$branch_height
-          private$intra_species_h[[left_child$name]] <- left_child$y_coord - left_child$half_y_thickness - left_child$branch_height + left_child$branch_height / (left_child$min_branch_height + 1)
-          private$intra_species_h[[right_child$name]] <- right_child$y_coord - right_child$half_y_thickness - right_child$branch_height + right_child$branch_height / (right_child$min_branch_height + 1)
+          private$intra_species_h[[left_child$name]] <- left_child$y - left_child$half_y_thickness - left_child$branch_height + left_child$branch_height / (left_child$min_branch_height + 1)
+          private$intra_species_h[[right_child$name]] <- right_child$y - right_child$half_y_thickness - right_child$branch_height + right_child$branch_height / (right_child$min_branch_height + 1)
         }
         if (private$config$use_y_shift) {
           y_shift <- min(
@@ -178,25 +185,28 @@ RecPhylo <- R6::R6Class("RecPhylo",
           right_child$branch_height <- right_child$branch_height - y_shift
           private$branch_height[[left_child$name]] <- left_child$branch_height
           private$branch_height[[right_child$name]] <- right_child$branch_height
-          private$intra_species_h[[left_child$name]] <- left_child$y_coord - left_child$half_y_thickness - left_child$branch_height + left_child$branch_height / (left_child$min_branch_height + 1)
-          private$intra_species_h[[right_child$name]] <- right_child$y_coord - right_child$half_y_thickness - right_child$branch_height + right_child$branch_height / (right_child$min_branch_height + 1)
+          private$intra_species_h[[left_child$name]] <- left_child$y - left_child$half_y_thickness - left_child$branch_height + left_child$branch_height / (left_child$min_branch_height + 1)
+          private$intra_species_h[[right_child$name]] <- right_child$y - right_child$half_y_thickness - right_child$branch_height + right_child$branch_height / (right_child$min_branch_height + 1)
         }
       } else {
         stop("This species tree is not binary.")
       }
+      if (y > private$max_y) {
+        private$max_y <- y
+      }
       private$side[[name]] <- side
       private$branch_height[[name]] <- branch_height
       private$min_branch_height[[name]] <- min_branch_height
-      private$intra_species_h[[name]] <- y_coord - half_y_thickness - branch_height + branch_height / (min_branch_height + 1)
+      private$intra_species_h[[name]] <- y - half_y_thickness - branch_height + branch_height / (min_branch_height + 1)
       if (side == "left") {
-        private$intra_species_x[[name]] <- x_coord - half_x_thickness + 1
+        private$intra_species_x[[name]] <- x - half_x_thickness + 1
       } else {
-        private$intra_species_x[[name]] <- x_coord + half_x_thickness - 1
+        private$intra_species_x[[name]] <- x + half_x_thickness - 1
       }
       if (is_leaf == TRUE) {
-        private$intra_species_y[[name]] <- y_coord
+        private$intra_species_y[[name]] <- y
       } else {
-        private$intra_species_y[[name]] <- y_coord - half_y_thickness + y_shift + 1
+        private$intra_species_y[[name]] <- y - half_y_thickness + y_shift + 1
       }
       # Return the list
       splist <- list(
@@ -204,8 +214,8 @@ RecPhylo <- R6::R6Class("RecPhylo",
         parent = parent,
         side = side,
         is_leaf = is_leaf,
-        x_coord = x_coord,
-        y_coord = y_coord,
+        x = x,
+        y = y,
         branch_height = branch_height,
         half_x_thickness = half_x_thickness,
         half_y_thickness = half_y_thickness,
