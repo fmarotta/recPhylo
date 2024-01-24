@@ -180,17 +180,21 @@ RecPhylo <- R6::R6Class("RecPhylo",
       cat("RecPhylo object with ", nrow(self$spNodes), " species (", sum(self$spNodes$is_leaf), " leaves) and ", sum(self$recGeneNodes$event_type == "leaf"), " genes (", nrow(self$recGeneNodes), " events)\n", sep = "")
     },
     plot = function() {
-      ggplot() +
-        geom_line(data = self$spEdges, aes(x, y, group = group)) +
-        geom_point(data = self$spNodes, aes(x_coord, y_coord)) +
-        geom_text(data = self$spNodes, aes(x_coord, y_coord, label = name)) +
-        geom_point(data = self$recGeneNodes, aes(x, y)) +
-        geom_line(data = self$recGeneEdges, aes(x, y, group = group, color = gsub("l+$", "", lineage), linetype = event_type == "loss_v"), show.legend = F) +
-        geom_point(data = data.frame(x = -private$config$x_padding, y = private$config$branch_length_scale), aes(x, y), alpha = 0) +
-        # coord_polar() +
-        # coord_flip() +
-        # theme_void() +
-        NULL
+      if (requireNamespace("ggplot2", quietly = T)) {
+        ggplot2::ggplot() +
+          ggplot2::geom_line(data = self$spEdges, ggplot2::aes(x, y, group = group)) +
+          ggplot2::geom_point(data = self$spNodes, ggplot2::aes(x_coord, y_coord)) +
+          ggplot2::geom_text(data = self$spNodes, ggplot2::aes(x_coord, y_coord, label = name)) +
+          ggplot2::geom_point(data = self$recGeneNodes, ggplot2::aes(x, y)) +
+          ggplot2::geom_line(data = self$recGeneEdges, ggplot2::aes(x, y, group = group, color = gsub("l+$", "", lineage), linetype = event_type == "loss_v"), show.legend = F) +
+          ggplot2::geom_point(data = data.frame(x = -private$config$x_padding, y = 0), ggplot2::aes(x, y), alpha = 0) +
+          # coord_polar() +
+          # coord_flip() +
+          # theme_void() +
+          NULL
+      } else {
+        stop("Please install ggplot2 before using the plot() method.")
+      }
     }
   ),
   private = list(

@@ -15,6 +15,7 @@ Imports:
     xml2,
     R6
 Suggests:
+    ggplot2,
     testthat (>= 3.0.0),
     vdiffr
 License: MIT + file LICENSE
