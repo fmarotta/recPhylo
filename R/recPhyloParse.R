@@ -24,6 +24,8 @@ as.data.frame.recphylo_recGeneTree <- function(l) {
 
 # TODO: https://arxiv.org/pdf/2008.08960.pdf
 
+# Pass aes(y = -y) everywhere and then coord_polar() to make an inverted radial plot.
+
 #' @export
 RecPhylo <- R6::R6Class("RecPhylo",
   public = list(
@@ -132,10 +134,14 @@ RecPhylo <- R6::R6Class("RecPhylo",
       }
       # Branch length
       min_branch_height <- sum(xml2::xml_name(events) %in% c("duplication", "loss", "branchingOut"))
-      if (is.character(private$config$use_branch_length)) {
+      if (is.numeric(private$config$use_branch_length)) {
+        branch_length <- private$config$use_branch_length * private$config$branch_length_scale
+        y <- y_start + branch_length
+      } else if (is.character(private$config$use_branch_length)) {
         branch_length <- xml2::xml_double(xml2::xml_find_first(spnode, private$config$use_branch_length))
         if (is.na(branch_length)) {
           branch_length <- 1
+          warning(private$config$use_branch_length, " not found in clade. Setting branch length to 1 automatically.")
         }
         branch_length <- branch_length * private$config$branch_length_scale
         y <- y_start + branch_length
@@ -161,7 +167,7 @@ RecPhylo <- R6::R6Class("RecPhylo",
         right_child <- private$parse_sptree(children[[2]], parent = name, side = "right", y_start = y)
         x <- (left_child$x + left_child$half_x_thickness + right_child$x - right_child$half_x_thickness) / 2
         is_leaf <- FALSE
-        if (!is.character(private$config$use_branch_length)) {
+        if (private$config$use_branch_length == FALSE) {
           y <- min(left_child$y, right_child$y) - private$config$branch_length_scale
           left_child$branch_height <- left_child$y - y - half_y_thickness - left_child$half_y_thickness
           right_child$branch_height <- right_child$y - y - half_y_thickness - right_child$half_y_thickness
