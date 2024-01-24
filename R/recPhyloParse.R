@@ -42,11 +42,6 @@ RecPhylo <- R6::R6Class("RecPhylo",
       private$internal_events <- sapply(species_names, function(sp) {
         xml2::xml_find_all(private$recphylo_xml, paste0("recGeneTree//*[@speciesLocation='", sp, "']"))
       }, simplify = FALSE)
-      private$max_y <- max(
-        sapply(xml2::xml_find_all(private$recphylo_xml, "//spTree/phylogeny//clade"), function(clade) {
-          length(xml2::xml_find_all(clade, "./ancestor-or-self::clade")) * branch_length_scale
-        })
-      )
       self$redraw()
       invisible(self)
     },
@@ -61,7 +56,7 @@ RecPhylo <- R6::R6Class("RecPhylo",
       spRoot <- xml2::xml_find_first(private$recphylo_xml, "spTree//clade")
       gRoot <- xml2::xml_find_first(private$recphylo_xml, "recGeneTree//clade")
       private$max_x = 0
-      spList <- private$parse_sptree(spRoot)
+      spList <- private$parse_sptree(spRoot, y_start = -private$config$branch_length_scale)
       gList <- private$parse_gtree(gRoot)
       self$spNodes <- as.data.frame(spList)
       self$spEdges <- get_spedges(spList)
@@ -110,7 +105,6 @@ RecPhylo <- R6::R6Class("RecPhylo",
     recphylo_xml = NULL,
     config = list(),
     max_x = 0,
-    max_y = 0,
     internal_events = list(),
     side = list(),
     branch_height = list(),
@@ -140,7 +134,7 @@ RecPhylo <- R6::R6Class("RecPhylo",
         y_coord <- y_start + branch_length
       } else {
         branch_length <- private$config$branch_length_scale
-        y_coord <- private$max_y
+        y_coord <- 0
       }
       branch_height <- branch_length - half_y_thickness - parent_half_y_thickness
       if (branch_height <= 0) {
