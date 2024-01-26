@@ -55,7 +55,7 @@ RecPhylo <- R6::R6Class("RecPhylo",
       )
       species_names <- xml2::xml_text(xml2::xml_find_all(private$recphylo_xml, "//spTree/phylogeny//clade/name"))
       private$internal_events <- sapply(species_names, function(sp) {
-        xml2::xml_find_all(private$recphylo_xml, paste0("recGeneTree//*[@speciesLocation='", sp, "']"))
+          xml2::xml_find_all(private$recphylo_xml, paste0("recGeneTree//*[@speciesLocation='", sp, "'] | recGeneTree//transferBack[following-sibling::*[@speciesLocation='", sp, "']]"))
       }, simplify = FALSE)
       self$redraw()
     },
@@ -175,8 +175,8 @@ RecPhylo <- R6::R6Class("RecPhylo",
         if (private$config$use_branch_length == FALSE) {
           y <- min(left_child$y, right_child$y) - private$config$branch_length_scale
         }
-        left_child_min_branch_height <- sum(xml2::xml_name(private$internal_events[[left_child$name]]) %in% c("duplication", "loss", "branchingOut"))
-        right_child_min_branch_height <- sum(xml2::xml_name(private$internal_events[[right_child$name]]) %in% c("duplication", "loss", "branchingOut"))
+        left_child_min_branch_height <- sum(xml2::xml_name(private$internal_events[[left_child$name]]) %in% c("duplication", "loss", "branchingOut", "transferBack"))
+        right_child_min_branch_height <- sum(xml2::xml_name(private$internal_events[[right_child$name]]) %in% c("duplication", "loss", "branchingOut", "transferBack"))
         if (private$config$use_y_shift == T) {
           y_shift <- min(
             left_child$y - half_y_thickness - y - left_child$half_y_thickness + left_child$y_shift - left_child_min_branch_height,
@@ -213,7 +213,7 @@ RecPhylo <- R6::R6Class("RecPhylo",
       }
       private$side[[splist$name]] <- splist$side
       branch_height <- splist$y + splist$y_shift - parent_y - parent_y_shift - splist$half_y_thickness - parent_half_y_thickness
-      min_branch_height <- sum(xml2::xml_name(private$internal_events[[splist$name]]) %in% c("duplication", "loss", "branchingOut"))
+      min_branch_height <- sum(xml2::xml_name(private$internal_events[[splist$name]]) %in% c("duplication", "loss", "branchingOut", "transferBack"))
       if (isTRUE(private$warnings$negative_branch_height) && min_branch_height + parent_y_shift < 0) {
         private$warnings$negative_branch_height = FALSE
         warning("Negative branch heights: the tree will be gibberish. Please increase `branch_length_scale`.", call. = FALSE)
@@ -294,6 +294,26 @@ RecPhylo <- R6::R6Class("RecPhylo",
         right_child = right_child
       )
       class(glist) <- c("recphylo_recGeneTree", class(glist))
+      # If there was a transferBack, add this node as a left child of the transfer
+      if (length(xml2::xml_find_first(gnode, "./eventsRec/*[self::transferBack]")) > 0) {
+        new_id <- paste(id, "transferBack", sep = "@")
+        glist$parent <- new_id
+        glist <- list(
+          id = new_id,
+          name = paste(name, "transferBack", sep = "@"),
+          parent = parent,
+          event_type = "transferBack",
+          event_location = event_location,
+          side = side,
+          x = x,
+          y = private$intra_species_h[[event_location]],
+          lineage = lineage,
+          left_child = glist,
+          right_child = NULL
+        )
+        class(glist) <- c("recphylo_recGeneTree", class(glist))
+        private$increment_h(event_location)
+      }
       return(glist)
     },
     increment_x = function(spname) {
