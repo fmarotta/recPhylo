@@ -8,10 +8,24 @@ get_spedges <- function(splist) {
     )
   } else {
     rbind(
-      data.frame(  # The inner 'U'
-        group = paste(splist$name, "in"),
-        x = c(splist$left_child$x + splist$left_child$half_x_thickness, splist$left_child$x + splist$left_child$half_x_thickness, splist$right_child$x - splist$right_child$half_x_thickness, splist$right_child$x - splist$right_child$half_x_thickness),
-        y = c(splist$left_child$y - splist$left_child$half_y_thickness, splist$y + splist$half_y_thickness + splist$y_shift, splist$y + splist$half_y_thickness + splist$y_shift, splist$right_child$y - splist$right_child$half_y_thickness)
+      if (is.na(splist$parent)) {
+        data.frame(  # The root's pipe
+          group = rep(c(paste(splist$name, "rootl"), paste(splist$name, "rootr")), each = 2),
+          x = c(splist$x - splist$half_x_thickness, splist$x - splist$half_x_thickness, splist$x + splist$half_x_thickness, splist$x + splist$half_x_thickness),
+          y = c(splist$y - splist$half_y_thickness + splist$y_shift, splist$y - splist$half_y_thickness + splist$y_shift - 2, splist$y - splist$half_y_thickness + splist$y_shift, splist$y - splist$half_y_thickness + splist$y_shift - 2)
+        )
+      } else {
+        NULL
+      },
+      data.frame(  # The inner 'U' (left part)
+        group = paste(splist$name, "inl"),
+        x = c(splist$left_child$x + splist$left_child$half_x_thickness, splist$left_child$x + splist$left_child$half_x_thickness, splist$x),
+        y = c(splist$left_child$y - splist$left_child$half_y_thickness, splist$y + splist$half_y_thickness + splist$y_shift, splist$y + splist$half_y_thickness + splist$y_shift)
+      ),
+      data.frame(  # The inner 'U' (right part)
+        group = paste(splist$name, "inr"),
+        x = c(splist$x, splist$right_child$x - splist$right_child$half_x_thickness, splist$right_child$x - splist$right_child$half_x_thickness),
+        y = c(splist$y + splist$half_y_thickness + splist$y_shift, splist$y + splist$half_y_thickness + splist$y_shift, splist$right_child$y - splist$right_child$half_y_thickness)
       ),
       data.frame(  # The left shoulder
         group = paste(splist$name, "outl"),
