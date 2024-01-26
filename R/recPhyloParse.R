@@ -40,8 +40,13 @@ RecPhylo <- R6::R6Class("RecPhylo",
         private$recphylo_xml <- xml2::xml_unserialize(xml2::xml_serialize(xml_file, NULL))
       } else if (is.character(xml_file)) {
         private$recphylo_xml <- xml2::read_xml(xml_file)
+      } else {
+        stop("`xml_file` must be either an xml_document or the path to an xml file.")
       }
       xml2::xml_ns_strip(private$recphylo_xml)
+      if (! (is.character(use_branch_length) || is.numeric(use_branch_length) || isFALSE(use_branch_length))) {
+        stop("`use_branch_length` can only be a character vector, numeric vector, or FALSE.")
+      }
       private$config <- list(
         use_y_shift = use_y_shift,
         use_branch_length = use_branch_length,
@@ -65,6 +70,7 @@ RecPhylo <- R6::R6Class("RecPhylo",
       spRoot <- xml2::xml_find_first(private$recphylo_xml, "spTree//clade")
       gRoot <- xml2::xml_find_first(private$recphylo_xml, "recGeneTree//clade")
       private$max_x <- private$max_y <- 0
+      private$warnings$negative_branch_height <- T
       self$spList <- private$parse_sptree(spRoot, y_start = -private$config$branch_length_scale)
       private$calc_branch_heights(self$spList)
       self$gList <- private$parse_gtree(gRoot)
@@ -118,6 +124,7 @@ RecPhylo <- R6::R6Class("RecPhylo",
   private = list(
     recphylo_xml = NULL,
     config = list(),
+    warnings = list(negative_branch_height = T, missing_branch_length = T),
     max_x = 0,
     max_y = 0,
     internal_events = list(),
@@ -126,7 +133,7 @@ RecPhylo <- R6::R6Class("RecPhylo",
     intra_species_h = list(),
     side = list(),
     branch_height_fraction = list(),
-    parse_sptree = function(spnode, parent = NA, side = "root", y_start = 0) {
+    parse_sptree = function(spnode, parent = NA, side = "root", y_start = 0, warn = T) {
       name <- xml2::xml_text(xml2::xml_find_first(spnode, "name"))
       # Find all gene events that occur in this species
       events <- private$internal_events[[name]]
@@ -140,7 +147,10 @@ RecPhylo <- R6::R6Class("RecPhylo",
         branch_length <- xml2::xml_double(xml2::xml_find_first(spnode, private$config$use_branch_length))
         if (is.na(branch_length)) {
           branch_length <- 1
-          warning(private$config$use_branch_length, " not found in clade. Setting branch length to 1 automatically.")
+          if (isTRUE(private$warnings$missing_branch_length)) {
+            private$warnings$missing_branch_length <- FALSE
+            warning("'", private$config$use_branch_length, "' not found in clade ", name, ". Setting branch length to 1 automatically.", call. = FALSE)
+          }
         }
         branch_length <- branch_length * private$config$branch_length_scale
         y <- y_start + branch_length
@@ -158,8 +168,8 @@ RecPhylo <- R6::R6Class("RecPhylo",
         private$max_x <- x + half_x_thickness + private$config$x_padding
         is_leaf <- TRUE
       } else if (length(children) == 2) {
-        left_child <- private$parse_sptree(children[[1]], parent = name, side = "left", y_start = y)
-        right_child <- private$parse_sptree(children[[2]], parent = name, side = "right", y_start = y)
+        left_child <- private$parse_sptree(children[[1]], parent = name, side = "left", y_start = y, warn = warn)
+        right_child <- private$parse_sptree(children[[2]], parent = name, side = "right", y_start = y, warn = warn)
         x <- (left_child$x + left_child$half_x_thickness + right_child$x - right_child$half_x_thickness) / 2
         is_leaf <- FALSE
         if (private$config$use_branch_length == FALSE) {
@@ -197,13 +207,17 @@ RecPhylo <- R6::R6Class("RecPhylo",
       class(splist) <- c("recphylo_spTree", class(splist))
       return(splist)
     },
-    calc_branch_heights = function(splist, parent_y = 0, parent_half_y_thickness = 0, parent_y_shift = 0) {
+    calc_branch_heights = function(splist, parent_y = 0, parent_half_y_thickness = 0, parent_y_shift = 0, warn = TRUE) {
       if (is.null(splist)) {
         return(invisible(self))
       }
       private$side[[splist$name]] <- splist$side
       branch_height <- splist$y + splist$y_shift - parent_y - parent_y_shift - splist$half_y_thickness - parent_half_y_thickness
       min_branch_height <- sum(xml2::xml_name(private$internal_events[[splist$name]]) %in% c("duplication", "loss", "branchingOut"))
+      if (isTRUE(private$warnings$negative_branch_height) && min_branch_height + parent_y_shift < 0) {
+        private$warnings$negative_branch_height = FALSE
+        warning("Negative branch heights: the tree will be gibberish. Please increase `branch_length_scale`.", call. = FALSE)
+      }
       private$branch_height_fraction[[splist$name]] <- branch_height / (min_branch_height + 1)
       private$intra_species_h[[splist$name]] <- parent_y + parent_y_shift + parent_half_y_thickness + private$branch_height_fraction[[splist$name]]
       if (splist$side == "left") {
@@ -216,8 +230,8 @@ RecPhylo <- R6::R6Class("RecPhylo",
       } else {
         private$intra_species_y[[splist$name]] <- splist$y - splist$half_y_thickness + splist$y_shift + 1
       }
-      private$calc_branch_heights(splist$left_child, splist$y, splist$half_y_thickness, splist$y_shift)
-      private$calc_branch_heights(splist$right_child, splist$y, splist$half_y_thickness, splist$y_shift)
+      private$calc_branch_heights(splist$left_child, splist$y, splist$half_y_thickness, splist$y_shift, warn)
+      private$calc_branch_heights(splist$right_child, splist$y, splist$half_y_thickness, splist$y_shift, warn)
       return(invisible(self))
     },
     parse_gtree = function(gnode, parent = NA, side = "root", lineage = "r") {
