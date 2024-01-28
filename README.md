@@ -6,6 +6,8 @@
 <!-- badges: start -->
 
 [![R-CMD-check](https://github.com/fmarotta/recPhyloParse/actions/workflows/R-CMD-check.yaml/badge.svg)](https://github.com/fmarotta/recPhyloParse/actions/workflows/R-CMD-check.yaml)
+[![Codecov test
+coverage](https://codecov.io/gh/fmarotta/recPhyloParse/branch/main/graph/badge.svg)](https://app.codecov.io/gh/fmarotta/recPhyloParse?branch=main)
 <!-- badges: end -->
 
 recPhyloParse provides a way to import reconciliated phylogenies into R

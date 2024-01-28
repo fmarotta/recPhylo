@@ -17,7 +17,8 @@ knitr::opts_chunk$set(
 
 <!-- badges: start -->
   [![R-CMD-check](https://github.com/fmarotta/recPhyloParse/actions/workflows/R-CMD-check.yaml/badge.svg)](https://github.com/fmarotta/recPhyloParse/actions/workflows/R-CMD-check.yaml)
-  <!-- badges: end -->
+[![Codecov test coverage](https://codecov.io/gh/fmarotta/recPhyloParse/branch/main/graph/badge.svg)](https://app.codecov.io/gh/fmarotta/recPhyloParse?branch=main)
+<!-- badges: end -->
 
 recPhyloParse provides a way to import reconciliated phylogenies into R in a way that makes it easy to plot the trees with ggplot2. The starting point is an XML file following the [recPhyloXML format](http://phylariane.univ-lyon1.fr/recphyloxml/), which will be parsed into an [R6 object](https://r6.r-lib.org/index.html). During the parsing, the coordinates and attributes of all the plot elements will be appropriately extracted into data.frames, so that standard ggplot2 geoms can be used.
 
