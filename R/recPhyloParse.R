@@ -26,16 +26,62 @@ as.data.frame.recphylo_recGeneTree <- function(l) {
 
 # Pass aes(y = -y) everywhere and then coord_polar() to make an inverted radial plot. or use scale_y_reverse() and coord_polar().
 
+#' R6 Class RecPhylo
+#'
+#' @description
+#' Class used to import and manipulate [reconciliated phylogenetic trees](https://en.wikipedia.org/wiki/Phylogenetic_reconciliation)
+#' from [RecPhyloXML](http://phylariane.univ-lyon1.fr/recphyloxml/) files.
+#'
+#' @param use_branch_length What to use as branch length
+#' @param x_padding Distance between species in the plot
+#' @param branch_length_scale Multiplier for the branch length
+#' @param use_y_shift Whether to apply the y_shift correction (can make the plot look prettier)
+#'
 #' @export
 RecPhylo <- R6::R6Class("RecPhylo",
+  active = list(
+    #' @field spList Species tree in list form.
+    spList = function(value) {
+      if (missing(value)) private$.spList
+      else stop("Can't assign value to spList")
+    },
+    #' @field spNodes data.frame with the nodes of the species tree.
+    spNodes = function(value) {
+      if (missing(value)) private$.spNodes
+      else stop("Can't assign value to spNodes")
+    },
+    #' @field spEdges data.frame with the edges of the species tree.
+    spEdges = function(value) {
+      if (missing(value)) private$.spEdges
+      else stop("Can't assign value to spEdges")
+    },
+    #' @field recGeneList Genes tree in list form.
+    recGeneList = function(value) {
+      if (missing(value)) private$.recGeneList
+      else stop("Can't assign value to recGeneList")
+    },
+    #' @field recGeneNodes data.frame with the nodes of the genes tree.
+    recGeneNodes = function(value) {
+      if (missing(value)) private$.recGeneNodes
+      else stop("Can't assign value to recGeneNodes")
+    },
+    #' @field recGeneEdges data.frame with the edges of the genes tree.
+    recGeneEdges = function(value) {
+      if (missing(value)) private$.recGeneEdges
+      else stop("Can't assign value to recGeneEdges")
+    }
+  ),
   public = list(
-    spList = NULL,
-    spNodes = NULL,
-    spEdges = NULL,
-    gList = NULL,
-    recGeneNodes = NULL,
-    recGeneEdges = NULL,
-    initialize = function(xml_file, use_branch_length = "branch_length", use_y_shift = TRUE, x_padding = 1, branch_length_scale = 1) {
+    #' @description Create a new RecPhylo object from a RecPhyloXML file.
+    #'
+    #' @param xml_file Path to the RecPhyloXML file.
+    #'
+    #' @returns A new RecPhylo object.
+    #'
+    #' @examples
+    #' xml_file <- system.file("extdata", "example_1.recphyloxml", package = "recPhyloParse")
+    #' rp <- RecPhylo$new(xml_file)
+    initialize = function(xml_file, use_branch_length = "branch_length", x_padding = 1, branch_length_scale = 1, use_y_shift = TRUE) {
       if ("xml_document" %in% class(xml_file)) {
         private$recphylo_xml <- xml2::xml_unserialize(xml2::xml_serialize(xml_file, NULL))
       } else if (is.character(xml_file)) {
@@ -60,6 +106,12 @@ RecPhylo <- R6::R6Class("RecPhylo",
       }, simplify = FALSE)
       self$redraw()
     },
+    #' @description Redraw the reconciliated tree, changing parameters.
+    #'
+    #' @examples
+    #' xml_file <- system.file("extdata", "example_1.recphyloxml", package = "recPhyloParse")
+    #' rp <- RecPhylo$new(xml_file)
+    #' rp$redraw(x_padding = 5)
     redraw = function(x_padding, use_branch_length, branch_length_scale, use_y_shift) {
       for (param in names(as.list(match.call())[-1])) {
         value <- get(param)
@@ -72,17 +124,24 @@ RecPhylo <- R6::R6Class("RecPhylo",
       gRoot <- xml2::xml_find_first(private$recphylo_xml, "recGeneTree//clade")
       private$max_x <- private$max_y <- 0
       private$warnings$negative_branch_height <- T
-      self$spList <- private$parse_sptree(spRoot, y_start = -private$config$branch_length_scale)
-      private$calc_branch_heights(self$spList)
-      self$gList <- private$parse_gtree(gRoot)
-      self$spNodes <- as.data.frame(self$spList)
-      self$spEdges <- get_spedges(self$spList)
-      self$recGeneNodes <- as.data.frame(self$gList)
-      self$recGeneEdges <- get_gedges(self$gList)
+      private$.spList <- private$parse_sptree(spRoot, y_start = -private$config$branch_length_scale)
+      private$calc_branch_heights(private$.spList)
+      private$.recGeneList <- private$parse_gtree(gRoot)
+      private$.spNodes <- as.data.frame(private$.spList)
+      private$.spEdges <- get_spedges(private$.spList)
+      private$.recGeneNodes <- as.data.frame(private$.recGeneList)
+      private$.recGeneEdges <- get_gedges(private$.recGeneList)
       invisible(self)
     },
+    #' @description Import branch lengths from another species tree.
+    #'
+    #' @param phylo Object of class "phylo" (e.g. from ape's read.tree())
+    #'
+    #' @examples
+    #' xml_file <- system.file("extdata", "example_1.recphyloxml", package = "recPhyloParse")
+    #' rp <- RecPhylo$new(xml_file)
+    #' rp$redraw(x_padding = 5)
     import_branch_lengths = function(phylo) {
-      # Input is an object of class "phylo" (e.g. from ape's read.tree())
       if (is.null(phylo$edge.length)) {
         stop("`edge.length` not found in phylo object.")
       }
@@ -106,14 +165,15 @@ RecPhylo <- R6::R6Class("RecPhylo",
       })
       invisible(self)
     },
-    flip_children_species = function(sp) {
-      # TODO. should be relatively easy, just reflect across the node's x all
-      # the x coords of downstream genes and species. but we need to take that
-      # into account when we redraw, so we should save it somewhere...
-    },
-    flip_children_gene = function(g) {
-      # TODO. more tricky, may entail flipping species as well.
-    },
+    # flip_children_species = function(sp) {
+    #   # TODO. should be relatively easy, just reflect across the node's x all
+    #   # the x coords of downstream genes and species. but we need to take that
+    #   # into account when we redraw, so we should save it somewhere...
+    # },
+    # flip_children_gene = function(g) {
+    #   # TODO. more tricky, may entail flipping species as well.
+    # },
+    #' @description Print config, spNodes, and recGeneNodes.
     print = function() {
       cat("<config>\n")
       str(private$config)
@@ -122,9 +182,16 @@ RecPhylo <- R6::R6Class("RecPhylo",
       cat("\n<recGeneNodes>\n")
       str(self$recGeneNodes)
     },
+    #' @description Print summary information about the tree.
     summary = function() {
       cat("RecPhylo object with ", nrow(self$spNodes), " species (", sum(self$spNodes$is_leaf), " leaves) and ", sum(self$recGeneNodes$event_type == "leaf"), " genes (", nrow(self$recGeneNodes), " events)\n", sep = "")
     },
+    #' @description Create a test plot of the tree.
+    #'
+    #' @details
+    #' This method is used for testing purposes, just to check that all the
+    #' elements are OK. Feel free to copy the code and edit it to make your
+    #' own pretty plots.
     plot = function() {
       if (requireNamespace("ggplot2", quietly = T)) {
         auxpoints <- data.frame(
@@ -149,6 +216,12 @@ RecPhylo <- R6::R6Class("RecPhylo",
     }
   ),
   private = list(
+    .spList = NULL,
+    .spNodes = NULL,
+    .spEdges = NULL,
+    .recGeneList = NULL,
+    .recGeneNodes = NULL,
+    .recGeneEdges = NULL,
     recphylo_xml = NULL,
     config = list(),
     warnings = list(negative_branch_height = T, missing_branch_length = T),
