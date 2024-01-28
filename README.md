@@ -38,6 +38,5 @@ ggplot() +
 
 * We support only one gene tree per species tree.
 * BifurcationOut events are currently not supported.
-* The edges of BranchingOut events can sometimes have the wrong shape.
 * We don't have the ability to (easily) flip the children of a node (both gene and species tree).
 * We make no attempt to minimise the edge crossings for lateral transfers.

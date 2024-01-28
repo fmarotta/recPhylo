@@ -1,4 +1,3 @@
-
 get_spedges <- function(splist) {
   if (splist$is_leaf == TRUE) {
     data.frame(  # The pipe closed at one end
@@ -57,45 +56,54 @@ get_gedges <- function(glist, parent = NULL) {
       side = glist$side,
       lineage = glist$lineage
     )
+  } else if (glist$event_type == "loss") {
+    item <- rbind(
+      data.frame(
+        x = c(glist$x, glist$x),
+        y = c(glist$y, parent$y),
+        group = paste(glist$id, "v", sep = "_"),
+        event_type = paste(glist$event_type, "v", sep = "_"),
+        side = glist$side,
+        lineage = glist$lineage
+      ),
+      data.frame(
+        x = c(glist$x, parent$x),
+        y = c(parent$y, parent$y),
+        group = paste(glist$id, "h", sep = "_"),
+        event_type = paste(glist$event_type, "h", sep = "_"),
+        side = glist$side,
+        lineage = glist$lineage
+      )
+    )
+  } else if (glist$event_type == "transferBack") {
+    item <- data.frame(
+      x = c(glist$x, parent$x),
+      y = c(glist$y, parent$y),
+      group = glist$id,
+      event_type = glist$event_type,
+      side = glist$side,
+      lineage = glist$lineage
+    )
+  } else if (parent$x >= glist$x) {
+    item <- data.frame(
+      x = c(glist$x, glist$x, parent$x),
+      y = c(glist$y, parent$y, parent$y),
+      group = glist$id,
+      event_type = glist$event_type,
+      side = glist$side,
+      lineage = glist$lineage
+    )
+  } else if (parent$x < glist$x) {
+    item <- data.frame(
+      x = c(parent$x, glist$x, glist$x),
+      y = c(parent$y, parent$y, glist$y),
+      group = glist$id,
+      event_type = glist$event_type,
+      side = glist$side,
+      lineage = glist$lineage
+    )
   } else {
-    if (glist$event_type == "loss") {
-      item <- rbind(
-        data.frame(
-          x = c(glist$x, glist$x),
-          y = c(glist$y, parent$y),
-          group = paste(glist$id, "v", sep = "_"),
-          event_type = paste(glist$event_type, "v", sep = "_"),
-          side = glist$side,
-          lineage = glist$lineage
-        ),
-        data.frame(
-          x = c(glist$x, parent$x),
-          y = c(parent$y, parent$y),
-          group = paste(glist$id, "h", sep = "_"),
-          event_type = paste(glist$event_type, "h", sep = "_"),
-          side = glist$side,
-          lineage = glist$lineage
-        )
-      )
-    } else if (parent$x > glist$x) {
-      item <- data.frame(
-        x = c(glist$x, glist$x, parent$x),
-        y = c(glist$y, parent$y, parent$y),
-        group = glist$id,
-        event_type = glist$event_type,
-        side = glist$side,
-        lineage = glist$lineage
-      )
-    } else {
-      item <- data.frame(
-        x = c(parent$x, glist$x, glist$x),
-        y = c(parent$y, parent$y, glist$y),
-        group = glist$id,
-        event_type = glist$event_type,
-        side = glist$side,
-        lineage = glist$lineage
-      )
-    }
+    stop("Unexpected node type: ", glist)
   }
   rbind(
     item,
