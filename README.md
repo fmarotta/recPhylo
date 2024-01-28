@@ -40,3 +40,4 @@ ggplot() +
 * BifurcationOut events are currently not supported.
 * We don't have the ability to (easily) flip the children of a node (both gene and species tree).
 * We make no attempt to minimise the edge crossings for lateral transfers.
+* We do not add clade attributes and internal elements as columns in the resulting data.frame (we could add all these: http://www.phyloxml.org/documentation/version_1.20/phyloxml.html)

@@ -82,7 +82,7 @@
 <polyline points='497.61,316.54 497.61,335.16 497.61,335.16 ' style='stroke-width: 1.07; stroke: #F8766D; stroke-linecap: butt;' />
 <polyline points='410.84,130.32 410.84,214.12 448.03,214.12 ' style='stroke-width: 1.07; stroke: #619CFF; stroke-linecap: butt;' />
 <polyline points='448.03,214.12 534.79,214.12 ' style='stroke-width: 1.07; stroke: #619CFF; stroke-linecap: butt;' />
-<polyline points='534.79,172.22 534.79,214.12 ' style='stroke-width: 1.07; stroke: #619CFF; stroke-dasharray: 5.69,5.69; stroke-linecap: butt;' />
+<polyline points='534.79,172.22 534.79,214.12 ' style='stroke-width: 1.07; stroke: #619CFF; stroke-dasharray: 1.42,4.27,5.69,4.27; stroke-linecap: butt;' />
 <polyline points='448.03,214.12 448.03,335.16 497.61,335.16 ' style='stroke-width: 1.07; stroke: #619CFF; stroke-linecap: butt;' />
 <polyline points='342.67,381.71 497.61,381.71 497.61,335.16 ' style='stroke-width: 1.07; stroke: #F8766D; stroke-linecap: butt;' />
 <polyline points='342.67,381.71 342.67,437.57 ' style='stroke-width: 1.07; stroke: #F8766D; stroke-linecap: butt;' />

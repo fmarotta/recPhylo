@@ -80,6 +80,31 @@ RecPhylo <- R6::R6Class("RecPhylo",
       self$recGeneEdges <- get_gedges(self$gList)
       invisible(self)
     },
+    import_branch_lengths = function(phylo) {
+      # Input is an object of class "phylo" (e.g. from ape's read.tree())
+      if (is.null(phylo$edge.length)) {
+        stop("`edge.length` not found in phylo object.")
+      }
+      if (is.null(phylo$node.label)) {
+        # TODO: use the tree structure to infer them.
+        stop("`node.label` not found in phylo object.")
+      }
+      species_labels <- c(phylo$tip.label, phylo$node.label)
+      species_table <- data.frame(
+        parent = species_labels[phylo$edge[, 1]],
+        child = species_labels[phylo$edge[, 2]],
+        branchLength = phylo$edge.length
+      )
+      lapply(xml2::xml_find_all(private$recphylo, "spTree//clade"), function(cl) {
+        child_name <- xml2::xml_text(xml2::xml_find_first(cl, "name"))
+        branch_length <- species_table[species_table$child == child_name, ]$branchLength
+        if (! length(branch_length) || is.null(branch_length)) {
+          branch_length <- 1
+        }
+        xml2::xml_set_attr(cl, "branch_length", branch_length)
+      })
+      invisible(self)
+    },
     flip_children_species = function(sp) {
       # TODO. should be relatively easy, just reflect across the node's x all
       # the x coords of downstream genes and species. but we need to take that
@@ -145,7 +170,10 @@ RecPhylo <- R6::R6Class("RecPhylo",
         branch_length <- private$config$use_branch_length * private$config$branch_length_scale
         y <- y_start + branch_length
       } else if (is.character(private$config$use_branch_length)) {
-        branch_length <- xml2::xml_double(xml2::xml_find_first(spnode, private$config$use_branch_length))
+        branch_length <- xml2::xml_attr(spnode, private$config$use_branch_length)
+        if (is.na(branch_length)) {
+          branch_length <- xml2::xml_double(xml2::xml_find_first(spnode, private$config$use_branch_length))
+        }
         if (is.na(branch_length)) {
           branch_length <- 1
           if (isTRUE(private$warnings$missing_branch_length)) {
@@ -155,9 +183,11 @@ RecPhylo <- R6::R6Class("RecPhylo",
         }
         branch_length <- branch_length * private$config$branch_length_scale
         y <- y_start + branch_length
-      } else {
+      } else if (isFALSE(private$config$use_branch_length)) {
         branch_length <- private$config$branch_length_scale
         y <- 0
+      } else {
+        stop("Unsupported type for `use_branch_length`.")
       }
       y_shift <- 0
       children <- xml2::xml_find_all(spnode, "./clade")
