@@ -53,6 +53,7 @@ RecPhylo <- R6::R6Class("RecPhylo",
         x_padding = x_padding,
         branch_length_scale = branch_length_scale
       )
+      private$make_unique_gene_names()
       species_names <- xml2::xml_text(xml2::xml_find_all(private$recphylo_xml, "//spTree/phylogeny//clade/name"))
       private$internal_events <- sapply(species_names, function(sp) {
           xml2::xml_find_all(private$recphylo_xml, paste0("recGeneTree//*[@speciesLocation='", sp, "'] | recGeneTree//transferBack[following-sibling::*[@speciesLocation='", sp, "']]"))
@@ -95,7 +96,7 @@ RecPhylo <- R6::R6Class("RecPhylo",
         child = species_labels[phylo$edge[, 2]],
         branchLength = phylo$edge.length
       )
-      lapply(xml2::xml_find_all(private$recphylo, "spTree//clade"), function(cl) {
+      lapply(xml2::xml_find_all(private$recphylo_xml, "spTree//clade"), function(cl) {
         child_name <- xml2::xml_text(xml2::xml_find_first(cl, "name"))
         branch_length <- species_table[species_table$child == child_name, ]$branchLength
         if (! length(branch_length) || is.null(branch_length)) {
@@ -159,6 +160,19 @@ RecPhylo <- R6::R6Class("RecPhylo",
     intra_species_h = list(),
     side = list(),
     branch_height_fraction = list(),
+    make_unique_gene_names = function() {
+      # We also need to make sure that each gene parent has a unique name.
+      # In many cases, the name is just "NULL".
+      # Sometimes an internal node in the gene tree has the same name as a leaf node.
+      # This is done by generax for who knows what reason.
+      # We need to make sure that this doesn't happen.
+      clades <- xml2::xml_find_all(private$recphylo_xml, "recGeneTree//name")
+      new_names <- make.unique(xml2::xml_text(clades), sep = "#")
+      lapply(seq_along(clades), function(i) {
+        xml_text(clades[i]) <- new_names[i]
+      })
+      invisible(self)
+    },
     parse_sptree = function(spnode, parent = NA, side = "root", y_start = 0, warn = T) {
       name <- xml2::xml_text(xml2::xml_find_first(spnode, "name"))
       # Find all gene events that occur in this species
