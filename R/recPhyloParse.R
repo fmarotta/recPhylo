@@ -138,7 +138,7 @@ RecPhylo <- R6::R6Class("RecPhylo",
           ggplot2::geom_point(data = self$recGeneNodes, ggplot2::aes(x, y)) +
           ggplot2::geom_line(data = self$recGeneEdges, ggplot2::aes(x, y, group = group, color = gsub("l+$", "", lineage), linetype = event_type), show.legend = F) +
           ggplot2::geom_point(data = auxpoints, ggplot2::aes(x, y), alpha = 0) +
-          ggplot2::scale_linetype_manual(values = c("loss_v" = 4, "transferBack" = 3), na.value = 1) +
+          ggplot2::scale_linetype_manual(values = c("loss_v" = 2, "transferBack" = 3), na.value = 1) +
           # coord_polar() +
           # coord_flip() +
           # theme_void() +
@@ -169,7 +169,7 @@ RecPhylo <- R6::R6Class("RecPhylo",
       clades <- xml2::xml_find_all(private$recphylo_xml, "recGeneTree//name")
       new_names <- make.unique(xml2::xml_text(clades), sep = "#")
       lapply(seq_along(clades), function(i) {
-        xml_text(clades[i]) <- new_names[i]
+        xml2::xml_text(clades[i]) <- new_names[i]
       })
       invisible(self)
     },
