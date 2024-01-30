@@ -136,11 +136,6 @@ RecPhylo <- R6::R6Class("RecPhylo",
     #' @description Import branch lengths from another species tree.
     #'
     #' @param phylo Object of class "phylo" (e.g. from ape's read.tree())
-    #'
-    #' @examples
-    #' xml_file <- system.file("extdata", "example_1.recphyloxml", package = "recPhyloParse")
-    #' rp <- RecPhylo$new(xml_file)
-    #' rp$redraw(x_padding = 5)
     import_branch_lengths = function(phylo) {
       if (is.null(phylo$edge.length)) {
         stop("`edge.length` not found in phylo object.")
@@ -163,7 +158,7 @@ RecPhylo <- R6::R6Class("RecPhylo",
         }
         xml2::xml_set_attr(cl, "branch_length", branch_length)
       })
-      invisible(self)
+      self$redraw()
     },
     # flip_children_species = function(sp) {
     #   # TODO. should be relatively easy, just reflect across the node's x all
@@ -239,10 +234,17 @@ RecPhylo <- R6::R6Class("RecPhylo",
       # Sometimes an internal node in the gene tree has the same name as a leaf node.
       # This is done by generax for who knows what reason.
       # We need to make sure that this doesn't happen.
-      clades <- xml2::xml_find_all(private$recphylo_xml, "recGeneTree//name")
-      new_names <- make.unique(xml2::xml_text(clades), sep = "#")
-      lapply(seq_along(clades), function(i) {
-        xml2::xml_text(clades[i]) <- new_names[i]
+      # Also, we make sure that leaves get the name without the # suffix and
+      # the internal nodes get the suffix.
+      gene_names <- xml2::xml_find_all(private$recphylo_xml, "recGeneTree//name")
+      gene_events <- sapply(gene_names, function(g) {
+        xml2::xml_name(xml2::xml_find_first(g, "../eventsRec/*[self::leaf or self::duplication or self::loss or self::branchingOut or self::speciation]"))
+      })
+      gene_events <- factor(gene_events, levels = c("leaf", "loss", "speciation", "duplication", "branchingOut"), ordered = TRUE)
+      gene_names <- gene_names[order(gene_events)]
+      new_names <- make.unique(xml2::xml_text(gene_names), sep = "#")
+      lapply(seq_along(gene_names), function(i) {
+        xml2::xml_text(gene_names[i]) <- new_names[i]
       })
       invisible(self)
     },
@@ -257,7 +259,7 @@ RecPhylo <- R6::R6Class("RecPhylo",
         branch_length <- private$config$use_branch_length * private$config$branch_length_scale
         y <- y_start + branch_length
       } else if (is.character(private$config$use_branch_length)) {
-        branch_length <- xml2::xml_attr(spnode, private$config$use_branch_length)
+        branch_length <- as.numeric(xml2::xml_attr(spnode, private$config$use_branch_length))
         if (is.na(branch_length)) {
           branch_length <- xml2::xml_double(xml2::xml_find_first(spnode, private$config$use_branch_length))
         }
