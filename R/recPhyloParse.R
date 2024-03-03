@@ -164,11 +164,32 @@ RecPhylo <- R6::R6Class("RecPhylo",
       })
       self$redraw()
     },
-    # flip_children_species = function(sp) {
-    #   # TODO. should be relatively easy, just reflect across the node's x all
-    #   # the x coords of downstream genes and species. but we need to take that
-    #   # into account when we redraw, so we should save it somewhere...
-    # },
+    #' @description Add species nodes attributes
+    #'
+    #' @param df data.frame to be merged with spNodes
+    add_species_nodes_annotation = function(df) {
+      private$.spNodesAnnot <- append(private$.spNodesAnnot, list(df))
+    },
+    #' @description Add gene nodes attributes
+    #'
+    #' @param df data.frame to be merged with recGeneNodes
+    add_gene_nodes_annotation = function(df) {
+      private$.recGeneNodesAnnot <- append(private$.recGeneNodesAnnot, list(df))
+    },
+    flip_children_species = function(sp) {
+      # TODO. should be relatively easy, just reflect across the node's x all
+      # the x coords of downstream genes and species. but we need to take that
+      # into account when we redraw, so we should save it somewhere...
+      # Yah, the first time we should reflect, then for subsequent redraws we should reverse the children during the parsing.
+      # For now we just reverse the children during the parsing.
+      stopifnot(length(sp) == 1)
+      if (sp %in% private$.spNodesFlips) {
+        private$.spNodesFlips <- private$.spNodesFlips[private$.spNodesFlips != sp]
+      } else {
+        private$.spNodesFlips <- append(private$.spNodesFlips, sp)
+      }
+      self$redraw()
+    },
     # flip_children_gene = function(g) {
     #   # TODO. more tricky, may entail flipping species as well.
     # },
@@ -298,6 +319,9 @@ RecPhylo <- R6::R6Class("RecPhylo",
         private$max_x <- x + half_x_thickness + private$config$x_padding
         is_leaf <- TRUE
       } else if (length(children) == 2) {
+        if (name %in% private$.spNodesFlips) {
+          children <- rev(children)
+        }
         left_child <- private$parse_sptree(children[[1]], parent = name, side = "left", y_start = y, warn = warn)
         right_child <- private$parse_sptree(children[[2]], parent = name, side = "right", y_start = y, warn = warn)
         x <- (left_child$x + left_child$half_x_thickness + right_child$x - right_child$half_x_thickness) / 2
