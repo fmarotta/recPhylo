@@ -32,6 +32,7 @@ as.data.frame.recphylo_recGeneTree <- function(l) {
 #' Class used to import and manipulate [reconciliated phylogenetic trees](https://en.wikipedia.org/wiki/Phylogenetic_reconciliation)
 #' from [RecPhyloXML](http://phylariane.univ-lyon1.fr/recphyloxml/) files.
 #'
+#'
 #' @param use_branch_length What to use as branch length
 #' @param x_padding Distance between species in the plot
 #' @param branch_length_scale Multiplier for the branch length
@@ -176,23 +177,48 @@ RecPhylo <- R6::R6Class("RecPhylo",
     add_gene_nodes_annotation = function(df) {
       private$.recGeneNodesAnnot <- append(private$.recGeneNodesAnnot, list(df))
     },
-    flip_children_species = function(sp) {
-      # TODO. should be relatively easy, just reflect across the node's x all
-      # the x coords of downstream genes and species. but we need to take that
-      # into account when we redraw, so we should save it somewhere...
-      # Yah, the first time we should reflect, then for subsequent redraws we should reverse the children during the parsing.
-      # For now we just reverse the children during the parsing.
-      stopifnot(length(sp) == 1)
-      if (sp %in% private$.spNodesFlips) {
-        private$.spNodesFlips <- private$.spNodesFlips[private$.spNodesFlips != sp]
-      } else {
-        private$.spNodesFlips <- append(private$.spNodesFlips, sp)
+    #' @description Swap the children of a species node
+    #'
+    #' @details Flipping is idempotent: doing it twice restores the original state.
+    #'
+    #' @param spnames names of the species whose children should be flipped
+    flip_species_children = function(spnames) {
+      # For efficiency, the first time we should just reflect, then for subsequent redraws we should reverse the children during the parsing.
+      # For now we just reverse the children and parse again.
+      if (any(! spnames %in% names(private$internal_events))) {
+        warning(setdiff(spnames, names(private$internal_events)), " are not species names in this tree and they will be ignored.")
+        spnames <- intersect(spnames, names(private$internal_events))
+      }
+      private$.spNodesFlips <- setdiff(union(private$.spNodesFlips, spnames), intersect(private$.spNodesFlips, spnames))
+      self$redraw()
+    },
+    #' @description Swap the children of a gene node
+    #'
+    #' @details Flipping is idempotent: doing it twice restores the original state. Note that only flipping the children of a duplication is meaningful. The other cases might be handled by flipping the host species instead.
+    #'
+    #' @param gnames names of the genes whose children should be flipped
+    flip_gene_children = function(gnames) {
+      # leaf: no sense, loss: no sense, speciation: flip the host species rather, duplication: what we do, transfer: no sense (or flip mrca species?)
+      all_events <- unlist(unname(lapply(private$internal_events, function(sp_events) {
+        gnode <- xml2::xml_parent(xml2::xml_parent(sp_events))
+        event_names <- xml2::xml_text(xml2::xml_find_first(gnode, "name"))
+        event_types <- xml2::xml_name(xml2::xml_find_first(gnode, "./eventsRec/*[self::leaf or self::duplication or self::loss or self::branchingOut or self::speciation]"))
+        setNames(event_types, event_names)
+      })))
+      m_gnames <- gnames %in% names(all_events)
+      if (any(!m_gnames)) {
+        warning("`", gnames[!m_gnames], "` are not species names in this tree and they will be ignored.")
+        gnames <- gnames[m_gnames]
+      }
+      my_events <- all_events[gnames]
+      my_dups <- names(my_events[my_events == "duplication"])
+      private$.recGeneNodesFlips <- setdiff(union(private$.recGeneNodesFlips, my_dups), intersect(private$.recGeneNodesFlips, my_dups))
+      my_nondups <- names(my_events[my_events != "duplication"])
+      if (length(my_nondups)) {
+        warning("`", my_nondups, "` are not duplications: flipping non-duplication nodes is not supported.")
       }
       self$redraw()
     },
-    # flip_children_gene = function(g) {
-    #   # TODO. more tricky, may entail flipping species as well.
-    # },
     #' @description Print config, spNodes, and recGeneNodes.
     print = function() {
       cat("<config>\n")
@@ -203,7 +229,7 @@ RecPhylo <- R6::R6Class("RecPhylo",
       str(self$recGeneNodes)
     },
     #' @description Print summary information about the tree.
-    summary = function() {
+    summarize = function() {
       cat("RecPhylo object with ", nrow(self$spNodes), " species (", sum(self$spNodes$is_leaf), " leaves) and ", sum(self$recGeneNodes$event_type == "leaf"), " genes (", nrow(self$recGeneNodes), " events)\n", sep = "")
     },
     #' @description Create a test plot of the tree.
@@ -246,8 +272,8 @@ RecPhylo <- R6::R6Class("RecPhylo",
     .recGeneEdges = NULL,
     .recGeneNodesAnnot = list(),
     .recGeneEdgesAnnot = list(),
-    .spNodesFlips = NULL,
-    .recGeneNodesFlips = NULL,
+    .spNodesFlips = character(0),
+    .recGeneNodesFlips = character(0),
     recphylo_xml = NULL,
     config = list(),
     warnings = list(negative_branch_height = T, missing_branch_length = T),
@@ -421,6 +447,9 @@ RecPhylo <- R6::R6Class("RecPhylo",
       if (length(children) == 0) {
         left_child <- right_child <- NULL
       } else if (length(children) == 2) {
+        if (name %in% private$.recGeneNodesFlips) {
+          children <- rev(children)
+        }
         if (event_type == "duplication") {
           lineage1 <- paste0(lineage, "l")
           lineage2 <- paste0(lineage, "r")
@@ -481,3 +510,22 @@ RecPhylo <- R6::R6Class("RecPhylo",
     }
   )
 )
+
+ex <- RecPhylo$new("/g/scb/bork/marotta/prj/mycogenes_survey/notebooks/2023-11-05_rasmus_figure/n_c_terminal_m129/generax/m129_trimmed/reconciliations/m129_trimmed_reconciliated.xml", x_padding = 1, use_branch_length = F, branch_length_scale = 10)
+ex$import_branch_lengths(fast_species_tree)
+
+ex$add_species_nodes_annotation(species_mapping)
+ex$add_gene_nodes_annotation(vip_residues)
+
+ex$spNodes
+
+
+ex <- RecPhylo$new(recphylo_example("example_1.recphyloxml"))
+ex$redraw(
+  branch_length_scale = 5,
+  x_padding = 3,
+  use_y_shift = T,
+  use_branch_length = "branch_length"
+)$plot() + ex$flip_species_children(c("BOGUS", "ABCD"))$plot() + ex$flip_species_children(c("ABCD", "CD"))$plot()
+
+ex$flip_gene_children(c("gene 5", "gene 1"))$plot()
