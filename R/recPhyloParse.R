@@ -47,7 +47,9 @@ RecPhylo <- R6::R6Class("RecPhylo",
     },
     #' @field spNodes data.frame with the nodes of the species tree.
     spNodes = function(value) {
-      if (missing(value)) private$.spNodes
+      if (missing(value)) {
+        Reduce(\(x, y) merge(x, y, all.x = T), private$.spNodesAnnot, private$.spNodes)
+      }
       else stop("Can't assign value to spNodes")
     },
     #' @field spEdges data.frame with the edges of the species tree.
@@ -62,7 +64,9 @@ RecPhylo <- R6::R6Class("RecPhylo",
     },
     #' @field recGeneNodes data.frame with the nodes of the genes tree.
     recGeneNodes = function(value) {
-      if (missing(value)) private$.recGeneNodes
+      if (missing(value)) {
+        Reduce(\(x, y) merge(x, y, all.x = T), private$.recGeneNodesAnnot, private$.recGeneNodes)
+      }
       else stop("Can't assign value to recGeneNodes")
     },
     #' @field recGeneEdges data.frame with the edges of the genes tree.
@@ -214,9 +218,15 @@ RecPhylo <- R6::R6Class("RecPhylo",
     .spList = NULL,
     .spNodes = NULL,
     .spEdges = NULL,
+    .spNodesAnnot = list(),
+    .spEdgesAnnot = list(),
     .recGeneList = NULL,
     .recGeneNodes = NULL,
     .recGeneEdges = NULL,
+    .recGeneNodesAnnot = list(),
+    .recGeneEdgesAnnot = list(),
+    .spNodesFlips = NULL,
+    .recGeneNodesFlips = NULL,
     recphylo_xml = NULL,
     config = list(),
     warnings = list(negative_branch_height = T, missing_branch_length = T),
