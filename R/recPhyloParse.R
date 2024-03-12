@@ -50,13 +50,17 @@ RecPhylo <- R6::R6Class("RecPhylo",
     spNodes = function(value) {
       if (missing(value)) {
         Reduce(\(x, y) merge(x, y, all.x = T), private$.spNodesAnnot, private$.spNodes)
+      } else {
+        stop("Can't assign value to spNodes")
       }
-      else stop("Can't assign value to spNodes")
     },
     #' @field spEdges data.frame with the edges of the species tree.
     spEdges = function(value) {
-      if (missing(value)) private$.spEdges
-      else stop("Can't assign value to spEdges")
+      if (missing(value)) {
+        Reduce(\(x, y) merge(x, y, all.x = T), private$.spEdgesAnnot, private$.spEdges)
+      } else {
+        stop("Can't assign value to spEdges")
+      }
     },
     #' @field recGeneList Genes tree in list form.
     recGeneList = function(value) {
@@ -67,13 +71,17 @@ RecPhylo <- R6::R6Class("RecPhylo",
     recGeneNodes = function(value) {
       if (missing(value)) {
         Reduce(\(x, y) merge(x, y, all.x = T), private$.recGeneNodesAnnot, private$.recGeneNodes)
+      } else {
+        stop("Can't assign value to recGeneNodes")
       }
-      else stop("Can't assign value to recGeneNodes")
     },
     #' @field recGeneEdges data.frame with the edges of the genes tree.
     recGeneEdges = function(value) {
-      if (missing(value)) private$.recGeneEdges
-      else stop("Can't assign value to recGeneEdges")
+      if (missing(value)) {
+         Reduce(\(x, y) merge(x, y, all.x = T), private$.recGeneEdgesAnnot, private$.recGeneEdges)
+      } else {
+        stop("Can't assign value to recGeneEdges")
+      }
     }
   ),
   public = list(
@@ -176,6 +184,18 @@ RecPhylo <- R6::R6Class("RecPhylo",
     #' @param df data.frame to be merged with recGeneNodes
     add_gene_nodes_annotation = function(df) {
       private$.recGeneNodesAnnot <- append(private$.recGeneNodesAnnot, list(df))
+    },
+    #' @description Add species edges attributes
+    #'
+    #' @param df data.frame to be merged with spEdges
+    add_species_edges_annotation = function(df) {
+      private$.spEdgesAnnot <- append(private$.spEdgesAnnot, list(df))
+    },
+    #' @description Add gene edges attributes
+    #'
+    #' @param df data.frame to be merged with recGeneEdges
+    add_gene_edges_annotation = function(df) {
+      private$.recGeneEdgesAnnot <- append(private$.recGeneEdgesAnnot, list(df))
     },
     #' @description Swap the children of a species node
     #'

@@ -26,14 +26,6 @@ rp <- RecPhylo$new(xml_file)
 xml_file <- system.file("extdata", "example_1.recphyloxml", package = "recPhyloParse")
 rp <- RecPhylo$new(xml_file)
 rp$redraw(x_padding = 5)
-
-## ------------------------------------------------
-## Method `RecPhylo$import_branch_lengths`
-## ------------------------------------------------
-
-xml_file <- system.file("extdata", "example_1.recphyloxml", package = "recPhyloParse")
-rp <- RecPhylo$new(xml_file)
-rp$redraw(x_padding = 5)
 }
 \section{Active bindings}{
 \if{html}{\out{<div class="r6-active-bindings">}}
@@ -58,8 +50,14 @@ rp$redraw(x_padding = 5)
 \item \href{#method-RecPhylo-new}{\code{RecPhylo$new()}}
 \item \href{#method-RecPhylo-redraw}{\code{RecPhylo$redraw()}}
 \item \href{#method-RecPhylo-import_branch_lengths}{\code{RecPhylo$import_branch_lengths()}}
+\item \href{#method-RecPhylo-add_species_nodes_annotation}{\code{RecPhylo$add_species_nodes_annotation()}}
+\item \href{#method-RecPhylo-add_gene_nodes_annotation}{\code{RecPhylo$add_gene_nodes_annotation()}}
+\item \href{#method-RecPhylo-add_species_edges_annotation}{\code{RecPhylo$add_species_edges_annotation()}}
+\item \href{#method-RecPhylo-add_gene_edges_annotation}{\code{RecPhylo$add_gene_edges_annotation()}}
+\item \href{#method-RecPhylo-flip_species_children}{\code{RecPhylo$flip_species_children()}}
+\item \href{#method-RecPhylo-flip_gene_children}{\code{RecPhylo$flip_gene_children()}}
 \item \href{#method-RecPhylo-print}{\code{RecPhylo$print()}}
-\item \href{#method-RecPhylo-summary}{\code{RecPhylo$summary()}}
+\item \href{#method-RecPhylo-summarize}{\code{RecPhylo$summarize()}}
 \item \href{#method-RecPhylo-plot}{\code{RecPhylo$plot()}}
 \item \href{#method-RecPhylo-clone}{\code{RecPhylo$clone()}}
 }
@@ -153,14 +151,114 @@ Import branch lengths from another species tree.
 }
 \if{html}{\out{</div>}}
 }
-\subsection{Examples}{
-\if{html}{\out{<div class="r example copy">}}
-\preformatted{xml_file <- system.file("extdata", "example_1.recphyloxml", package = "recPhyloParse")
-rp <- RecPhylo$new(xml_file)
-rp$redraw(x_padding = 5)
+}
+\if{html}{\out{<hr>}}
+\if{html}{\out{<a id="method-RecPhylo-add_species_nodes_annotation"></a>}}
+\if{latex}{\out{\hypertarget{method-RecPhylo-add_species_nodes_annotation}{}}}
+\subsection{Method \code{add_species_nodes_annotation()}}{
+Add species nodes attributes
+\subsection{Usage}{
+\if{html}{\out{<div class="r">}}\preformatted{RecPhylo$add_species_nodes_annotation(df)}\if{html}{\out{</div>}}
+}
+
+\subsection{Arguments}{
+\if{html}{\out{<div class="arguments">}}
+\describe{
+\item{\code{df}}{data.frame to be merged with spNodes}
 }
 \if{html}{\out{</div>}}
+}
+}
+\if{html}{\out{<hr>}}
+\if{html}{\out{<a id="method-RecPhylo-add_gene_nodes_annotation"></a>}}
+\if{latex}{\out{\hypertarget{method-RecPhylo-add_gene_nodes_annotation}{}}}
+\subsection{Method \code{add_gene_nodes_annotation()}}{
+Add gene nodes attributes
+\subsection{Usage}{
+\if{html}{\out{<div class="r">}}\preformatted{RecPhylo$add_gene_nodes_annotation(df)}\if{html}{\out{</div>}}
+}
 
+\subsection{Arguments}{
+\if{html}{\out{<div class="arguments">}}
+\describe{
+\item{\code{df}}{data.frame to be merged with recGeneNodes}
+}
+\if{html}{\out{</div>}}
+}
+}
+\if{html}{\out{<hr>}}
+\if{html}{\out{<a id="method-RecPhylo-add_species_edges_annotation"></a>}}
+\if{latex}{\out{\hypertarget{method-RecPhylo-add_species_edges_annotation}{}}}
+\subsection{Method \code{add_species_edges_annotation()}}{
+Add species edges attributes
+\subsection{Usage}{
+\if{html}{\out{<div class="r">}}\preformatted{RecPhylo$add_species_edges_annotation(df)}\if{html}{\out{</div>}}
+}
+
+\subsection{Arguments}{
+\if{html}{\out{<div class="arguments">}}
+\describe{
+\item{\code{df}}{data.frame to be merged with spEdges}
+}
+\if{html}{\out{</div>}}
+}
+}
+\if{html}{\out{<hr>}}
+\if{html}{\out{<a id="method-RecPhylo-add_gene_edges_annotation"></a>}}
+\if{latex}{\out{\hypertarget{method-RecPhylo-add_gene_edges_annotation}{}}}
+\subsection{Method \code{add_gene_edges_annotation()}}{
+Add gene edges attributes
+\subsection{Usage}{
+\if{html}{\out{<div class="r">}}\preformatted{RecPhylo$add_gene_edges_annotation(df)}\if{html}{\out{</div>}}
+}
+
+\subsection{Arguments}{
+\if{html}{\out{<div class="arguments">}}
+\describe{
+\item{\code{df}}{data.frame to be merged with recGeneEdges}
+}
+\if{html}{\out{</div>}}
+}
+}
+\if{html}{\out{<hr>}}
+\if{html}{\out{<a id="method-RecPhylo-flip_species_children"></a>}}
+\if{latex}{\out{\hypertarget{method-RecPhylo-flip_species_children}{}}}
+\subsection{Method \code{flip_species_children()}}{
+Swap the children of a species node
+\subsection{Usage}{
+\if{html}{\out{<div class="r">}}\preformatted{RecPhylo$flip_species_children(spnames)}\if{html}{\out{</div>}}
+}
+
+\subsection{Arguments}{
+\if{html}{\out{<div class="arguments">}}
+\describe{
+\item{\code{spnames}}{names of the species whose children should be flipped}
+}
+\if{html}{\out{</div>}}
+}
+\subsection{Details}{
+Flipping is idempotent: doing it twice restores the original state.
+}
+
+}
+\if{html}{\out{<hr>}}
+\if{html}{\out{<a id="method-RecPhylo-flip_gene_children"></a>}}
+\if{latex}{\out{\hypertarget{method-RecPhylo-flip_gene_children}{}}}
+\subsection{Method \code{flip_gene_children()}}{
+Swap the children of a gene node
+\subsection{Usage}{
+\if{html}{\out{<div class="r">}}\preformatted{RecPhylo$flip_gene_children(gnames)}\if{html}{\out{</div>}}
+}
+
+\subsection{Arguments}{
+\if{html}{\out{<div class="arguments">}}
+\describe{
+\item{\code{gnames}}{names of the genes whose children should be flipped}
+}
+\if{html}{\out{</div>}}
+}
+\subsection{Details}{
+Flipping is idempotent: doing it twice restores the original state. Note that only flipping the children of a duplication is meaningful. The other cases might be handled by flipping the host species instead.
 }
 
 }
@@ -175,12 +273,12 @@ Print config, spNodes, and recGeneNodes.
 
 }
 \if{html}{\out{<hr>}}
-\if{html}{\out{<a id="method-RecPhylo-summary"></a>}}
-\if{latex}{\out{\hypertarget{method-RecPhylo-summary}{}}}
-\subsection{Method \code{summary()}}{
+\if{html}{\out{<a id="method-RecPhylo-summarize"></a>}}
+\if{latex}{\out{\hypertarget{method-RecPhylo-summarize}{}}}
+\subsection{Method \code{summarize()}}{
 Print summary information about the tree.
 \subsection{Usage}{
-\if{html}{\out{<div class="r">}}\preformatted{RecPhylo$summary()}\if{html}{\out{</div>}}
+\if{html}{\out{<div class="r">}}\preformatted{RecPhylo$summarize()}\if{html}{\out{</div>}}
 }
 
 }

@@ -53,14 +53,31 @@ ggplot() +
 
 <img src="man/figures/README-unnamed-chunk-2-1.png" width="100%" />
 
+## Features
+
+- Parse and draw recPhyloXML trees with ggplot2
+- Three linear layouts: real branch lengths, uniform branch lengths,
+  aligned leaves
+- Corresponding circular layouts “for free” thanks to coord_polar()
+- Swap left and right children of a species node
+- Swap children of a duplication event
+- Import branch lengths from another species tree file
+- Add custom annotation for species nodes, gene nodes, species edges,
+  gene edges
+
 ## Bugs and missing features
 
-- We support only one gene tree per species tree.
-- BifurcationOut events are currently not supported.
-- We don’t have the ability to (easily) flip the children of a node
-  (both gene and species tree).
+- We support only recphyloxml files with exactly one gene and one
+  species tree
+- BifurcationOut events (as well as free-living species) are currently
+  not supported
+- We don’t have the ability to infer species tree from gene tree (this
+  is a prerequisite for implementing the previous two, maybe I’ll give
+  it a shot)
 - We make no attempt to minimise the edge crossings for lateral
-  transfers.
+  transfers (though you can manually swap left/right children to make
+  the tree look better)
+- We don’t automatically scale the plot to make it look nicer (planned)
 - We do not add clade attributes and internal elements as columns in the
   resulting data.frame (we could add all these:
   <http://www.phyloxml.org/documentation/version_1.20/phyloxml.html>)
