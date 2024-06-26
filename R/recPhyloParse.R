@@ -275,11 +275,11 @@ RecPhylo <- R6::R6Class("RecPhylo",
           y = c(private$max_y + private$config$branch_length_scale, self$spNodes[is.na(self$spNodes$parent), "y"] - private$config$branch_length_scale)
         )
         ggplot2::ggplot() +
-          ggplot2::geom_line(data = self$spEdges, ggplot2::aes(x, y, group = group)) +
+          ggplot2::geom_line(data = self$spEdges, ggplot2::aes(x, y, group = group), lineend = "round") +
           ggplot2::geom_point(data = self$spNodes, ggplot2::aes(x, y)) +
           ggplot2::geom_text(data = self$spNodes, ggplot2::aes(x, y, label = name)) +
           ggplot2::geom_point(data = self$recGeneNodes, ggplot2::aes(x, y)) +
-          ggplot2::geom_line(data = self$recGeneEdges, ggplot2::aes(x, y, group = group, color = gsub("l+$", "", lineage), linetype = event_type), show.legend = F) +
+          ggplot2::geom_line(data = self$recGeneEdges, ggplot2::aes(x, y, group = group, color = gsub("l+$", "", lineage), linetype = event_type), lineend = "round", show.legend = F) +
           ggplot2::geom_point(data = auxpoints, ggplot2::aes(x, y), alpha = 0) +
           ggplot2::scale_linetype_manual(values = c("loss_v" = 2, "transferBack" = 3), na.value = 1) +
           # coord_polar() +
