@@ -1,4 +1,4 @@
-get_spedges <- function(splist) {
+get_spedges <- function(splist, root_edge_length = 2) {
   if (splist$is_leaf == TRUE) {
     data.frame(  # The pipe closed at one end
       group = paste(splist$name, "close"),
@@ -13,7 +13,7 @@ get_spedges <- function(splist) {
           group = rep(c(paste(splist$name, "rootl"), paste(splist$name, "rootr")), each = 2),
           name = splist$name,
           x = c(splist$x - splist$half_x_thickness, splist$x - splist$half_x_thickness, splist$x + splist$half_x_thickness, splist$x + splist$half_x_thickness),
-          y = c(splist$y - splist$half_y_thickness + splist$y_shift, splist$y - splist$half_y_thickness + splist$y_shift - 2, splist$y - splist$half_y_thickness + splist$y_shift, splist$y - splist$half_y_thickness + splist$y_shift - 2)
+          y = c(splist$y - splist$half_y_thickness + splist$y_shift, splist$y - splist$half_y_thickness + splist$y_shift - root_edge_length, splist$y - splist$half_y_thickness + splist$y_shift, splist$y - splist$half_y_thickness + splist$y_shift - root_edge_length)
         )
       } else {
         NULL

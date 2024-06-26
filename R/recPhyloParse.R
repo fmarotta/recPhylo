@@ -138,10 +138,13 @@ RecPhylo <- R6::R6Class("RecPhylo",
       private$max_x <- private$max_y <- 0
       private$warnings$negative_branch_height <- T
       private$.spList <- private$parse_sptree(spRoot, y_start = -private$config$branch_length_scale)
-      private$calc_branch_heights(private$.spList)
+      root_list <- private$.spList
+      root_min_branch_height <- sum(xml2::xml_name(private$internal_events[[root_list$name]]) %in% c("duplication", "loss", "branchingOut", "transferBack"))
+      parent_y <- root_list$y + root_list$y_shift - root_list$half_y_thickness - root_min_branch_height
+      private$calc_branch_heights(private$.spList, parent_y = parent_y)
       private$.recGeneList <- private$parse_gtree(gRoot)
       private$.spNodes <- as.data.frame(private$.spList)
-      private$.spEdges <- get_spedges(private$.spList)
+      private$.spEdges <- get_spedges(private$.spList, root_edge_length = root_min_branch_height + 2)
       private$.recGeneNodes <- as.data.frame(private$.recGeneList)
       private$.recGeneEdges <- get_gedges(private$.recGeneList)
       invisible(self)

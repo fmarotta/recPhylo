@@ -58,6 +58,7 @@ rp$redraw(x_padding = 5)
 \item \href{#method-RecPhylo-flip_gene_children}{\code{RecPhylo$flip_gene_children()}}
 \item \href{#method-RecPhylo-print}{\code{RecPhylo$print()}}
 \item \href{#method-RecPhylo-summarize}{\code{RecPhylo$summarize()}}
+\item \href{#method-RecPhylo-write}{\code{RecPhylo$write()}}
 \item \href{#method-RecPhylo-plot}{\code{RecPhylo$plot()}}
 \item \href{#method-RecPhylo-clone}{\code{RecPhylo$clone()}}
 }
@@ -281,6 +282,25 @@ Print summary information about the tree.
 \if{html}{\out{<div class="r">}}\preformatted{RecPhylo$summarize()}\if{html}{\out{</div>}}
 }
 
+}
+\if{html}{\out{<hr>}}
+\if{html}{\out{<a id="method-RecPhylo-write"></a>}}
+\if{latex}{\out{\hypertarget{method-RecPhylo-write}{}}}
+\subsection{Method \code{write()}}{
+Save the tree in RecPhyloXML format.
+\subsection{Usage}{
+\if{html}{\out{<div class="r">}}\preformatted{RecPhylo$write(file, ...)}\if{html}{\out{</div>}}
+}
+
+\subsection{Arguments}{
+\if{html}{\out{<div class="arguments">}}
+\describe{
+\item{\code{file}}{Path to the file that will be written}
+
+\item{\code{...}}{Additional options passed to xml2::write_xml()}
+}
+\if{html}{\out{</div>}}
+}
 }
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-RecPhylo-plot"></a>}}
