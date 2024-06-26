@@ -349,12 +349,12 @@ RecPhylo <- R6::R6Class("RecPhylo",
         branch_length <- as.numeric(xml2::xml_attr(spnode, private$config$use_branch_length))
         if (is.na(branch_length)) {
           branch_length <- xml2::xml_double(xml2::xml_find_first(spnode, private$config$use_branch_length))
-        }
-        if (is.na(branch_length)) {
-          branch_length <- 1
-          if (isTRUE(private$warnings$missing_branch_length)) {
-            private$warnings$missing_branch_length <- FALSE
-            warning("'", private$config$use_branch_length, "' not found in clade ", name, ". Setting branch length to 1 automatically.", call. = FALSE)
+          if (is.na(branch_length)) {
+            branch_length <- 1
+            if (isTRUE(private$warnings$missing_branch_length)) {
+              private$warnings$missing_branch_length <- FALSE
+              warning("'", private$config$use_branch_length, "' not found in clade ", name, ". Setting branch length to 1 automatically.", call. = FALSE)
+            }
           }
         }
         branch_length <- branch_length * private$config$branch_length_scale
