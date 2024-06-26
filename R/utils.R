@@ -49,7 +49,7 @@ recphylo_example <- function(name = NULL) {
 #'                                               right_child=NULL),
 #'                               right_child=list(name="C",
 #'                                                left_child=NULL,
-#'                                                right_child=NULL))
+#'                                                right_child=NULL)))
 #' # Find the MRCA of nodes "A" and "B"
 #' mrca(tree, c("A", "B"))
 #'

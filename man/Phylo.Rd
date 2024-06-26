@@ -9,23 +9,6 @@ A new Phylo object.
 \description{
 Class used to import and manipulate phylogenetic trees in \href{https://en.wikipedia.org/wiki/PhyloXML}{PhyloXML format}.
 }
-\examples{
-
-## ------------------------------------------------
-## Method `Phylo$new`
-## ------------------------------------------------
-
-xml_file <- system.file("extdata", "example_1.phyloxml", package = "recPhyloParse")
-p <- Phylo$new(xml_file)
-
-## ------------------------------------------------
-## Method `Phylo$redraw`
-## ------------------------------------------------
-
-xml_file <- system.file("extdata", "example_1.recphyloxml", package = "recPhyloParse")
-rp <- RecPhylo$new(xml_file)
-rp$redraw(x_padding = 5)
-}
 \section{Active bindings}{
 \if{html}{\out{<div class="r6-active-bindings">}}
 \describe{
@@ -83,15 +66,6 @@ Create a new Phylo object from a PhyloXML file.
 }
 \if{html}{\out{</div>}}
 }
-\subsection{Examples}{
-\if{html}{\out{<div class="r example copy">}}
-\preformatted{xml_file <- system.file("extdata", "example_1.phyloxml", package = "recPhyloParse")
-p <- Phylo$new(xml_file)
-}
-\if{html}{\out{</div>}}
-
-}
-
 }
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-Phylo-redraw"></a>}}
@@ -115,16 +89,6 @@ Redraw the reconciliated tree, changing parameters.
 }
 \if{html}{\out{</div>}}
 }
-\subsection{Examples}{
-\if{html}{\out{<div class="r example copy">}}
-\preformatted{xml_file <- system.file("extdata", "example_1.recphyloxml", package = "recPhyloParse")
-rp <- RecPhylo$new(xml_file)
-rp$redraw(x_padding = 5)
-}
-\if{html}{\out{</div>}}
-
-}
-
 }
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-Phylo-import_branch_lengths"></a>}}

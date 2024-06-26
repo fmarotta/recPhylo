@@ -40,10 +40,6 @@ Phylo <- R6::R6Class("Phylo",
     #' @param xml_file Path to the PhyloXML file.
     #'
     #' @returns A new Phylo object.
-    #'
-    #' @examples
-    #' xml_file <- system.file("extdata", "example_1.phyloxml", package = "recPhyloParse")
-    #' p <- Phylo$new(xml_file)
     initialize = function(xml_file, use_branch_length = "branch_length", x_padding = 1, branch_length_scale = 1, use_y_shift = TRUE) {
       if ("xml_document" %in% class(xml_file)) {
         private$phylo_xml <- xml2::xml_unserialize(xml2::xml_serialize(xml_file, NULL))
@@ -67,11 +63,6 @@ Phylo <- R6::R6Class("Phylo",
       self$redraw()
     },
     #' @description Redraw the reconciliated tree, changing parameters.
-    #'
-    #' @examples
-    #' xml_file <- system.file("extdata", "example_1.recphyloxml", package = "recPhyloParse")
-    #' rp <- RecPhylo$new(xml_file)
-    #' rp$redraw(x_padding = 5)
     redraw = function(x_padding, use_branch_length, branch_length_scale, use_y_shift) {
       for (param in names(as.list(match.call())[-1])) {
         value <- get(param)

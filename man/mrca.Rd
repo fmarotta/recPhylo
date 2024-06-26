@@ -7,35 +7,42 @@
 mrca(phylo_list, nodes)
 }
 \arguments{
-\item{phylo_list}{A list representing the phylogenetic tree. This list should have elements
-\code{name} for the node names, and \code{left_child} and \code{right_child} for the branches, recursively.}
+\item{phylo_list}{A list representing the phylogenetic tree. This
+list should have elements \code{name} for the node names, and
+\code{left_child} and \code{right_child} for the branches, recursively}
 
-\item{nodes}{A character vector with the names of the nodes for which the MRCA is sought.}
+\item{nodes}{A character vector with the names of the nodes for which
+the MRCA is sought}
 }
 \value{
-Returns the name of the MRCA node if found; otherwise, \code{NA}. Additionally, if \code{NA} is
-returned, an attribute "which_nodes" is added to the result. This attribute is a logical vector
-indicating which of the nodes specified in the \code{nodes} argument are present in the subtree where
-the search ended.
+Returns the name of the MRCA node if found; otherwise, \code{NA}.
+Additionally, if \code{NA} is returned, an attribute "which_nodes" is
+added to the result. This attribute is a logical vector indicating
+which of the nodes specified in the \code{nodes} argument are present in
+the subtree where the search ended.
 }
 \description{
-This function searches through a binary phylogenetic tree represented as a list for the most recent common
-ancestor (MRCA) of a specified set of nodes. The tree is expected to be provided as a recursive
-list structure with \code{left_child} and \code{right_child} elements defining the bifurcations, and \code{name} elements defining the node names. Nodes in
+This function searches through a binary phylogenetic tree represented
+as a list for the most recent common ancestor (MRCA) of a specified
+set of nodes. The tree is expected to be provided as a recursive list
+structure with \code{left_child} and \code{right_child} elements defining the
+bifurcations, and \code{name} elements defining the node names. Nodes in
 the tree should be uniquely named.
 }
 \examples{
 # Construct a simple phylogenetic tree
-tree <- list(name="root", 
-             left_child=list(name="A", 
-                              left_child=NULL, 
-                              right_child=NULL),
-             right_child=list(name="B",
-                              left_child=list(name="B1",
+tree <- list(name="root",
+             left_child=list(name="A",
+                             left_child=NULL,
+                             right_child=NULL),
+             right_child=list(name="BC",
+                              left_child=list(name="B",
+                                              left_child=NULL,
+                                              right_child=NULL),
+                              right_child=list(name="C",
                                                left_child=NULL,
-                                               right_child=NULL),
-                              right_child=NULL))
-# Find the MRCA of nodes "A" and "B1"
-mrca(tree, c("A", "B1"))
+                                               right_child=NULL)))
+# Find the MRCA of nodes "A" and "B"
+mrca(tree, c("A", "B"))
 
 }
