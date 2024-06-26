@@ -252,6 +252,13 @@ RecPhylo <- R6::R6Class("RecPhylo",
     summarize = function() {
       cat("RecPhylo object with ", nrow(self$spNodes), " species (", sum(self$spNodes$is_leaf), " leaves) and ", sum(self$recGeneNodes$event_type == "leaf"), " genes (", nrow(self$recGeneNodes), " events)\n", sep = "")
     },
+    #' @description Save the tree in RecPhyloXML format.
+    #'
+    #' @param file Path to the file that will be written
+    #' @param ... Additional options passed to xml2::write_xml()
+    write = function(file, ...) {
+      xml2::write_xml(private$recphylo_xml, file)
+    },
     #' @description Create a test plot of the tree.
     #'
     #' @details
@@ -531,21 +538,12 @@ RecPhylo <- R6::R6Class("RecPhylo",
   )
 )
 
-ex <- RecPhylo$new("/g/scb/bork/marotta/prj/mycogenes_survey/notebooks/2023-11-05_rasmus_figure/n_c_terminal_m129/generax/m129_trimmed/reconciliations/m129_trimmed_reconciliated.xml", x_padding = 1, use_branch_length = F, branch_length_scale = 10)
-ex$import_branch_lengths(fast_species_tree)
 
-ex$add_species_nodes_annotation(species_mapping)
-ex$add_gene_nodes_annotation(vip_residues)
-
-ex$spNodes
-
-
-ex <- RecPhylo$new(recphylo_example("example_1.recphyloxml"))
-ex$redraw(
-  branch_length_scale = 5,
-  x_padding = 3,
-  use_y_shift = T,
-  use_branch_length = "branch_length"
-)$plot() + ex$flip_species_children(c("BOGUS", "ABCD"))$plot() + ex$flip_species_children(c("ABCD", "CD"))$plot()
-
-ex$flip_gene_children(c("gene 5", "gene 1"))$plot()
+# ex <- RecPhylo$new(recphylo_example("example_1.recphyloxml"))
+# ex$redraw(
+#   branch_length_scale = 5,
+#   x_padding = 3,
+#   use_y_shift = T,
+#   use_branch_length = "branch_length"
+# )$plot() #  + ex$flip_species_children(c("BOGUS", "ABCD"))$plot() + ex$flip_species_children(c("ABCD", "CD"))$plot()
+# # ex$plot() + ex$flip_gene_children(c("gene 5", "gene 1"))$plot() + ex$flip_gene_children(c("gene 12", "gene 16"))$plot()
