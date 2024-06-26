@@ -78,3 +78,59 @@ mrca <- function(phylo_list, nodes) {
   }
 }
 
+# XXX: I'm trying to upstream this to the ape package! https://github.com/emmanuelparadis/ape/pull/120
+#' Save a "phylo" object to a file in phyloXML format
+#'
+#' @param tree A phylogenetic tree (e.g. from ape::read.tree()).
+#' @param path Path to the file where the tree will be written.
+#'
+#' @export
+write_phyloXML <- function(tree, path) {
+  phyloxml <- xml2::xml_new_root("phyloxml",
+    xmlns = "http://www.phyloxml.org",
+    `xmlns:xsi` = "http://www.w3.org/2001/XMLSchema-instance",
+    `xsi:schemaLocation` = "http://www.phyloxml.org http://www.phyloxml.org/1.10/phyloxml.xsd"
+  )
+  phylogeny <- xml2::xml_add_child(phyloxml, "phylogeny", rooted = "false")
+  xml2::xml_add_child(phylogeny, "name", "my_tree")
+  xml2::xml_add_child(phylogeny, "description", "beautiful")
+  root_idx <- unique(tree$edge[! tree$edge[, 1] %in% tree$edge[, 2], 1])
+  stopifnot(length(root_idx) == 1)
+  clades <- phylo_to_xml_clades(root_idx, tree)
+  if (!is.null(tree$root.edge)) {
+    xml2::xml_set_attr(clades, "branch_length", tree$root.edge)
+  }
+  xml2::xml_add_child(phylogeny, clades)
+  xml2::write_xml(phyloxml, path)
+}
+
+phylo_to_xml_clades <- function(parent_idx, tree) {
+  n_tips <- tree$Nnodes + 1 + is.rooted(tree)
+  parent <- read_xml("<clade></clade>")
+  if (!is.null(tree$tip.label) && parent_idx <= length(tree$tip.label)) {
+    xml2::xml_add_child(parent, "name", tree$tip.label[parent_idx])
+  } else if (!is.null(tree$node.label) && parent_idx > n_tips) {
+    xml2::xml_add_child(parent, "name", tree$node.label[parent_idx - n_tips])
+  } else {
+    xml2::xml_add_child(parent, "name", paste("node", parent_idx, sep = "_"))
+  }
+  which_children <- which(tree$edge[, 1] == parent_idx)
+  if (length(which_children) == 0) {
+    return(parent)
+  }
+  lapply(which_children, function(which_child) {
+    child_idx <- tree$edge[which_child, 2]
+    child <- phylo_to_xml_clades(child_idx, tree)
+    if (!is.null(tree$edge.length)) {
+      branch_length <- tree$edge.length[which_child]
+      xml2::xml_set_attr(child, "branch_length", branch_length)
+    }
+    xml2::xml_add_child(parent, child)
+  })
+  return(parent)
+}
+
+nextperm <- function(vec) {
+  # TODO: correct implementation!
+  rev(vec)
+}
