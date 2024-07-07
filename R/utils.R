@@ -55,22 +55,16 @@ recphylo_example <- function(name = NULL) {
 #'
 #' @export
 mrca <- function(phylo_list, nodes) {
-  if (is.null(phylo_list)) {
-    ret <- NA
-    attr(ret, "which_nodes") <- rep(FALSE, length(nodes))
-    return(ret)
+  mrcas <- lapply(phylo_list$clade, mrca, nodes)
+  if (sum(!is.na(mrcas)) == 1) {
+    return(mrcas[[which(!is.na(mrcas))]])
   }
-  mrca_left <- mrca(phylo_list$left_child, nodes)
-  mrca_right <- mrca(phylo_list$right_child, nodes)
-  # if there are no duplicated node names, _left and _right can't be both true at the same time.
-  if (!is.na(mrca_left)) {
-    return(mrca_left)
-  } else if (!is.na(mrca_right)) {
-    return(mrca_right)
+  set <- nodes %in% phylo_list$name
+  if (length(mrcas) > 0) {
+   set <- set | Reduce(`|`, lapply(mrcas, attr, "which_nodes"))
   }
-  set <- nodes %in% phylo_list$name | attr(mrca_left, "which_nodes") | attr(mrca_right, "which_nodes")
   if (all(set)) {
-    return(phylo_list$name)
+    return(phylo_list)
   } else {
     ret <- NA
     attr(ret, "which_nodes") <- set
@@ -131,6 +125,16 @@ phylo_to_xml_clades <- function(parent_idx, tree) {
 }
 
 nextperm <- function(vec) {
-  # TODO: correct implementation!
-  rev(vec)
+  stopifnot(length(vec) > 0)
+  pivots <- which(vec[2:length(vec)] > vec[1:(length(vec)-1)])
+  if (length(pivots) == 0) {
+    return(NULL)
+  }
+  pivot <- max(pivots)
+  tmp <- vec[pivot]
+  successor <- which.min(vec[seq_along(vec) > pivot & vec > vec[pivot]]) + pivot
+  vec[pivot] <- vec[successor]
+  vec[successor] <- tmp
+  vec[(pivot+1):length(vec)] <- rev(vec[(pivot+1):length(vec)])
+  vec
 }
