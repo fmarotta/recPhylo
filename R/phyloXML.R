@@ -1,19 +1,60 @@
 # NOTE: gene and species names will be made unique
 # NOTE: phylogenies will be given a unique idx field (their index)
 
+#' Read a phyloXML file
+#'
+#' @description Read a tree from a file in phyloXML format and parse it
+#' into a list of phylogeny objects.
+#'
+#' @param x A string, a connection, or a raw vector (see xml2::read_xml).
+#' @param ... Additional arguments passed on to xml2::read_xml.
+#'
+#' @return A list of the phylogenies that were parsed from the file.
+#'
+#' @section Phylogeny objects:
+#' Each phylogeny is a list of class `phyloXML_phylogeny` with one field
+#' for each attribute or child of the `<phylogeny>` tag. The `clade` field
+#' is a nested list structure of class `phyloXML_clade`, with one field
+#' for each attribute of child of the `<clade>` tag.
+#'
+#' @note The `<name>` of the nodes in the tree will be made unique, if necessary, by adding
+#' suffixes of the form `#1`, `#2`, and so on. Unnamed clades will be given
+#' "unnamed" as their name. This is because the functions in this package
+#' heavily rely on the clades being uniquely named.
+#'
+#' @examples
+#' path_to_xml <- example_phyloXML_file()
+#' read_phyloXML(path_to_xml)
+#'
+#' @export
 read_phyloXML <- function(x, ...) {
-  xml <- read_xml(x, ...)
+  xml <- xml2::read_xml(x, ...)
   parse_phyloXML(xml)
 }
 
+#' Read a recPhyloXML file
+#'
+#' @inherit read_phyloXML
+#'
+#' @description Read a reconciliated tree from a file in recPhyloXML format and parse it
+#' into a list of spTree and recGeneTrees objects.
+#'
+#' @return A list with two elements: spTree and recGeneTrees. spTree is a simple phylogeny, recGeneTrees is a list of phylogenies.
+#'
+#' @examples
+#' path_to_xml <- example_phyloXML_file()
+#' read_phyloXML(path_to_xml)
+#'
+#' @export
 read_recPhyloXML <- function(x, ...) {
-  xml <- read_xml(x, ...)
+  xml <- xml2::read_xml(x, ...)
   parse_recPhyloXML(xml)
 }
 
 parse_phyloXML <- function(xml) {
+  xml2::xml_ns_strip(xml)
   make_unique_names(xml)
-  phylogenies <- xml_find_all(xml, "./phylogeny")
+  phylogenies <- xml2::xml_find_all(xml, "./phylogeny")
   l <- lapply(seq_along(phylogenies), function(phy_idx) {
     phy <- parse_phylogeny(phylogenies[[phy_idx]], type = "phyloXML")
     phy$idx <- phy_idx
@@ -24,10 +65,11 @@ parse_phyloXML <- function(xml) {
 }
 
 parse_recPhyloXML <- function(xml) {
-  make_unique_names(xml_find_first(xml, "./spTree"))
-  make_unique_recGeneTree_names(xml_find_first(xml, "./recGeneTree"))
-  spTree_xml <- xml_find_all(xml, "./spTree/phylogeny")
-  recGeneTree_xml <- xml_find_all(xml, "./recGeneTree/phylogeny")
+  xml2::xml_ns_strip(xml)
+  make_unique_names(xml2::xml_find_first(xml, "./spTree"))
+  make_unique_recGeneTree_names(xml2::xml_find_first(xml, "./recGeneTree"))
+  spTree_xml <- xml2::xml_find_all(xml, "./spTree/phylogeny")
+  recGeneTree_xml <- xml2::xml_find_all(xml, "./recGeneTree/phylogeny")
   stopifnot(length(spTree_xml) <= 1)
   stopifnot(length(recGeneTree_xml) >= 1)
   recGeneTrees <- lapply(seq_along(recGeneTree_xml), function(phy_idx) {
@@ -55,32 +97,32 @@ parse_recPhyloXML <- function(xml) {
 
 parse_phylogeny <- function(phylogeny_xml, type) {
   clade <- if (type == "phyloXML") {
-    parse_phyloXML_clade(xml_find_first(phylogeny_xml, "./clade"))
+    parse_phyloXML_clade(xml2::xml_find_first(phylogeny_xml, "./clade"))
   } else if (type == "spTree") {
-    parse_spTree_clade(xml_find_first(phylogeny_xml, "./clade"))
+    parse_spTree_clade(xml2::xml_find_first(phylogeny_xml, "./clade"))
   } else if (type == "recGeneTree") {
-    parse_recGeneTree_clade(xml_find_first(phylogeny_xml, "./clade"))
+    parse_recGeneTree_clade(xml2::xml_find_first(phylogeny_xml, "./clade"))
   } else {
     stop("Unsupported phylogeny type.")
   }
-  rooted <- as.logical(xml_attr(phylogeny_xml, "rooted"))
+  rooted <- as.logical(xml2::xml_attr(phylogeny_xml, "rooted"))
   if (is.na(rooted)) {
     rooted <- length(clade$clade) == 2
     warning("Phylogeny doesn't have a 'rooted' attribute. Inferred '", rooted, "'.")
   }
   phylogeny <- list(
-    name = xml_text(xml_find_first(phylogeny_xml, "./name")),
-    id = xml_text(xml_find_first(phylogeny_xml, "./id")),
-    description = xml_text(xml_find_first(phylogeny_xml, "./description")),
-    date = as.Date(xml_text(xml_find_first(phylogeny_xml, "./date"))),
+    name = xml2::xml_text(xml2::xml_find_first(phylogeny_xml, "./name")),
+    id = xml2::xml_text(xml2::xml_find_first(phylogeny_xml, "./id")),
+    description = xml2::xml_text(xml2::xml_find_first(phylogeny_xml, "./description")),
+    date = as.Date(xml2::xml_text(xml2::xml_find_first(phylogeny_xml, "./date"))),
     rooted = rooted,
-    rerootable = as.logical(xml_attr(phylogeny_xml, "rerootable")),
-    branch_length_unit = xml_attr(phylogeny_xml, "branch_length_unit"),
-    type = xml_attr(phylogeny_xml, "type"),
-    # confidence = xml_find_all(phylogeny_xml, "./confidence"),
-    # clade_relation = xml_find_all(phylogeny_xml, "./clade_relation"),
-    # sequence_relation = xml_find_all(phylogeny_xml, "./sequence_relation"),
-    # property = xml_find_all(phylogeny_xml, "./property"),
+    rerootable = as.logical(xml2::xml_attr(phylogeny_xml, "rerootable")),
+    branch_length_unit = xml2::xml_attr(phylogeny_xml, "branch_length_unit"),
+    type = xml2::xml_attr(phylogeny_xml, "type"),
+    # confidence = xml2::xml_find_all(phylogeny_xml, "./confidence"),
+    # clade_relation = xml2::xml_find_all(phylogeny_xml, "./clade_relation"),
+    # sequence_relation = xml2::xml_find_all(phylogeny_xml, "./sequence_relation"),
+    # property = xml2::xml_find_all(phylogeny_xml, "./property"),
     clade = clade
   )
   class(phylogeny) <- c("phyloXML_phylogeny", class(phylogeny))
@@ -88,9 +130,9 @@ parse_phylogeny <- function(phylogeny_xml, type) {
 }
 
 parse_clade <- function(clade_xml) {
-  name <- xml_text(xml_find_first(clade_xml, "./name"))
-  branch_length_attr <- as.numeric(xml_attr(clade_xml, "branch_length"))
-  branch_length_tag <- xml_double(xml_find_first(clade_xml, "branch_length"))
+  name <- xml2::xml_text(xml2::xml_find_first(clade_xml, "./name"))
+  branch_length_attr <- as.numeric(xml2::xml_attr(clade_xml, "branch_length"))
+  branch_length_tag <- xml2::xml_double(xml2::xml_find_first(clade_xml, "branch_length"))
   branch_length <- if (!is.na(branch_length_attr) && !is.na(branch_length_tag)) {
     warning("clade '", name, "' defines branch length both with an attribute and with a tag, which is ambiguous. I chose the attribute value, ", branch_length_attr, ".")
     branch_length_attr
@@ -104,19 +146,19 @@ parse_clade <- function(clade_xml) {
   clade <- list(
     branch_length = branch_length,
     name = name,
-    # id_source = xml_double(xml_find_first(clade_xml, "./id_source")),
-    collapse = as.logical(xml_attr(clade_xml, "collapse")),
-    # confidence = xml_text(xml_find_all(clade_xml, "./confidence")),
-    width = xml_double(xml_find_first(clade_xml, "./width")),
-    # color = xml_text(xml_find_first(clade_xml, "./color")),
-    # taxonomy = xml_text(xml_find_all(clade_xml, "./taxonomy")),
-    # sequence = xml_text(xml_find_all(clade_xml, "./sequence")),
-    # events = xml_text(xml_find_first(clade_xml, "./events")),
-    # binary_characters = xml_text(xml_find_first(clade_xml, "./binary_characters")),
-    # distribution = xml_text(xml_find_all(clade_xml, "./distribution")),
-    date = as.Date(xml_text(xml_find_first(clade_xml, "./date")))
-    # reference = xml_text(xml_find_all(clade_xml, "./reference")),
-    # property = xml_text(xml_find_all(clade_xml, "./property")),
+    # id_source = xml2::xml_double(xml2::xml_find_first(clade_xml, "./id_source")),
+    collapse = as.logical(xml2::xml_attr(clade_xml, "collapse")),
+    # confidence = xml2::xml_text(xml2::xml_find_all(clade_xml, "./confidence")),
+    width = xml2::xml_double(xml2::xml_find_first(clade_xml, "./width")),
+    # color = xml2::xml_text(xml2::xml_find_first(clade_xml, "./color")),
+    # taxonomy = xml2::xml_text(xml2::xml_find_all(clade_xml, "./taxonomy")),
+    # sequence = xml2::xml_text(xml2::xml_find_all(clade_xml, "./sequence")),
+    # events = xml2::xml_text(xml2::xml_find_first(clade_xml, "./events")),
+    # binary_characters = xml2::xml_text(xml2::xml_find_first(clade_xml, "./binary_characters")),
+    # distribution = xml2::xml_text(xml2::xml_find_all(clade_xml, "./distribution")),
+    date = as.Date(xml2::xml_text(xml2::xml_find_first(clade_xml, "./date")))
+    # reference = xml2::xml_text(xml2::xml_find_all(clade_xml, "./reference")),
+    # property = xml2::xml_text(xml2::xml_find_all(clade_xml, "./property")),
   )
   class(clade) <- c("phyloXML_clade", class(clade))
   clade
@@ -124,25 +166,25 @@ parse_clade <- function(clade_xml) {
 
 parse_phyloXML_clade <- function(clade_xml) {
   clade <- parse_clade(clade_xml)
-  clade$clade <- lapply(xml_find_all(clade_xml, "./clade"), parse_phyloXML_clade)
+  clade$clade <- lapply(xml2::xml_find_all(clade_xml, "./clade"), parse_phyloXML_clade)
   return(clade)
 }
 
 parse_spTree_clade <- function(clade_xml) {
   clade <- parse_clade(clade_xml)
-  clade$clade <- lapply(xml_find_all(clade_xml, "./clade"), parse_spTree_clade)
+  clade$clade <- lapply(xml2::xml_find_all(clade_xml, "./clade"), parse_spTree_clade)
   # clade$geography <- ... TODO
   return(clade)
 }
 
 parse_recGeneTree_clade <- function(clade_xml) {
   clade <- parse_clade(clade_xml)
-  event_xml <- xml_find_first(clade_xml, "./eventsRec/*[self::leaf or self::duplication or self::loss or self::branchingOut or self::speciation]")
-  clade$event_type <- xml_name(event_xml)
-  clade$event_location <- xml_attr(event_xml, "speciesLocation")
+  event_xml <- xml2::xml_find_first(clade_xml, "./eventsRec/*[self::leaf or self::duplication or self::loss or self::branchingOut or self::speciation]")
+  clade$event_type <- xml2::xml_name(event_xml)
+  clade$event_location <- xml2::xml_attr(event_xml, "speciesLocation")
   # clade$geography <- ... TODO
-  clade$clade <- lapply(xml_find_all(clade_xml, "./clade"), parse_recGeneTree_clade)
-  if (length(xml_find_first(clade_xml, "./eventsRec/*[self::transferBack]")) > 0) {
+  clade$clade <- lapply(xml2::xml_find_all(clade_xml, "./clade"), parse_recGeneTree_clade)
+  if (length(xml2::xml_find_first(clade_xml, "./eventsRec/*[self::transferBack]")) > 0) {
     parent <- clade
     parent$name <- paste(parent$name, "transferBack", sep = "@")
     parent$event_type <- "transferBack"
@@ -154,12 +196,12 @@ parse_recGeneTree_clade <- function(clade_xml) {
 
 # data.frame interop
 
+#' @export
 as.data.frame.phyloXML <- function(phylo_xml) {
-  lapply(seq_along(phylo_xml), function(phy_idx) {
-    as.data.frame(phylo_xml[[phy_idx]])
-  })
+  Reduce(rbind, lapply(phylo_xml, as.data.frame))
 }
 
+#' @export
 as.data.frame.phyloXML_phylogeny <- function(phy) {
   phy_fields <- setdiff(names(phy), "clade")
   phy_values <- phy[phy_fields]
@@ -168,14 +210,13 @@ as.data.frame.phyloXML_phylogeny <- function(phy) {
   cbind(as.data.frame(phy$clade), phy_values)
 }
 
+#' @export
 as.data.frame.phyloXML_clade <- function(cl) {
   fields <- setdiff(names(cl), "clade")
-  rbind(
-    as.data.frame(cl[fields]),
-    Reduce(rbind, lapply(cl$clade, as.data.frame))
-  )
+  Reduce(rbind, traverse_clades(cl, function(x) list(as.data.frame(x[fields]))))
 }
 
+#' @export
 as.data.frame.recPhyloXML <- function(recphylo_xml) {
   sp_df <- as.data.frame(recphylo_xml$spTree)
   sp_df$tree_type <- "spTree"
@@ -186,21 +227,101 @@ as.data.frame.recPhyloXML <- function(recphylo_xml) {
 
 # Public utils
 
+#' Decorate Clades with a Specific Attribute
+#'
+#' This function decorates each node in a clade with a new attribute computed by a user-defined function. It recursively applies the function to each child node in the clade.
+#'
+#' @param clade A list representing a phylogenetic clade. Each node in the clade is expected to have a `clade` element containing its child nodes.
+#' @param attr A character string representing the name of the attribute to be added to each node.
+#' @param FUN A function that computes the value of the attribute for each node. The function should accept the clade as its first argument and any additional parameters through `...`.
+#' @param ... Additional parameters to be passed to `FUN`.
+#' 
+#' @return The input `clade` list, with each node augmented by the computed attribute.
+#'
+#' @examples
+#' # Create a sample clade
+#' clade <- example_phyloXML_clade()
+#' # Define a function to compute an attribute
+#' compute_attr <- function(clade, factor = 1) {
+#'   length(clade$clade) * factor
+#' }
+#' # Decorate the clade with the new attribute
+#' decorated_clade <- decorate_clades(clade, "node_count", compute_attr, factor = 2)
+#'
+#' @export
 decorate_clades <- function(clade, attr, FUN, ...) {
   clade[[attr]] <- FUN(clade, ...)
   clade$clade <- lapply(clade$clade, decorate_clades, attr, FUN, ...)
   clade
 }
 
+#' Recursively Traverse Clades in a Phylogenetic Tree
+#'
+#' @description This function traverses the clades of a phylogenetic tree, applying a specified function to each clade.
+#'
+#' @param clade A list representing a clade of a phylogenetic tree. Each clade is expected to have a `clade` element which is a list of sub-clades.
+#' @param FUN A function to be applied to each clade. It should accept the clade object as first argument and potentially additional arguments `...`.
+#' @param ... Additional arguments to be passed to `FUN`.
+#' @param .order A character string indicating the order of traversal: "pre" for pre-order (default) and "post" for post-order.
+#'
+#' @return A list of results from applying `FUN` to each clade in the specified order.
+#'
+#' @examples
+#' clade <- example_phyloXML_clade()
+#' extract_clade_name <- function(clade) {
+#'   clade$name
+#' }
+#' traverse_clades(clade, extract_clade_name)
+#' traverse_clades(clade, extract_clade_name, .order = "post")
+#'
+#' @export
 traverse_clades <- function(clade, FUN, ..., .order = "pre") {
   item <- FUN(clade, ...)
   children <- lapply(clade$clade, traverse_clades, FUN, .order = .order, ...)
   if (.order == "pre") {
-    c(item, unlist(children))
+    c(item, unlist(children, recursive = FALSE))
   } else if (.order == "post") {
-    c(unlist(children), item)
+    c(unlist(children, recursive = FALSE), item)
   } else {
     stop("Unsupported `.order`. Please choose either 'pre' or 'post'.")
+  }
+}
+
+#' Find the Most Recent Common Ancestor (MRCA)
+#'
+#' This function identifies the MRCA of a set of nodes. It traverses through the clades and returns the MRCA, if possible.
+#'
+#' @param clade A list of class `phyloXML_clade` representing a
+#' phylogenetic tree.
+#' @param node_names A character vector containing the names of the
+#' nodes for which the MRCA is to be found.
+#'
+#' @return The function returns the MRCA clade of the specified nodes  .
+#' if found If the MRCA is not found, the function returns `NA` with   .
+#' an attribute "which_node_names" indicating the nodes that were not  .
+#' found in the tree                                                   .
+#'
+#' @examples
+#' clade <- example_phyloXML_clade()
+#' find_mrca_clade(clade, c("B. subtilis", "E. coli"))
+#' find_mrca_clade(clade, c("B. subtilis", "Bogus"))
+#'
+#' @export
+find_mrca_clade <- function(clade, node_names) {
+  mrcas <- lapply(clade$clade, find_mrca_clade, node_names)
+  if (sum(!is.na(mrcas)) == 1) {
+    return(mrcas[[which(!is.na(mrcas))]])
+  }
+  set <- node_names %in% clade$name
+  if (length(mrcas) > 0) {
+   set <- set | Reduce(`|`, lapply(mrcas, attr, "which_node_names"))
+  }
+  if (all(set)) {
+    return(clade)
+  } else {
+    ret <- NA
+    attr(ret, "which_node_names") <- set
+    return(ret)
   }
 }
 
@@ -324,6 +445,9 @@ add_recGene_annot <- function(x, df) {
 # Private utils
 
 make_unique_names <- function(root_xml) {
+  # Give a name to unnamed clades
+  unnamed <- xml2::xml_find_all(root_xml, "//clade[not(name)]")
+  xml2::xml_add_child(unnamed, xml2::read_xml("<name>unnamed</name>"))
   # We also need to make sure that each gene parent has a unique name.
   # In many cases, the name is just "NULL".
   # Sometimes an internal node in the gene tree has the same name as a leaf node.
@@ -341,6 +465,9 @@ make_unique_names <- function(root_xml) {
 }
 
 make_unique_recGeneTree_names <- function(root_xml) {
+  # Give a name to unnamed clades
+  unnamed <- xml2::xml_find_all(root_xml, "//clade[not(name)]")
+  xml2::xml_add_child(unnamed, xml2::read_xml("<name>unnamed</name>"))
   # We also need to make sure that each gene parent has a unique name.
   # In many cases, the name is just "NULL".
   # Sometimes an internal node in the gene tree has the same name as a leaf node.
@@ -360,4 +487,19 @@ make_unique_recGeneTree_names <- function(root_xml) {
     xml2::xml_text(gene_names[i]) <- new_names[i]
   })
   invisible(NULL)
+}
+
+nextperm <- function(vec) {
+  stopifnot(length(vec) > 0)
+  pivots <- which(vec[2:length(vec)] > vec[1:(length(vec)-1)])
+  if (length(pivots) == 0) {
+    return(NULL)
+  }
+  pivot <- max(pivots)
+  tmp <- vec[pivot]
+  successor <- which.min(vec[seq_along(vec) > pivot & vec > vec[pivot]]) + pivot
+  vec[pivot] <- vec[successor]
+  vec[successor] <- tmp
+  vec[(pivot+1):length(vec)] <- rev(vec[(pivot+1):length(vec)])
+  vec
 }

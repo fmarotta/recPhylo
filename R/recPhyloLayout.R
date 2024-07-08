@@ -1,5 +1,6 @@
 # NOTE: Pass aes(y = -y) everywhere and then coord_polar() to make an inverted radial plot. or use scale_y_reverse() and coord_polar().
 
+# @export
 RecPhyloLayout <- R6::R6Class("RecPhyloLayout",
   public = list(
     initialize = function(recPhylo, use_branch_length = TRUE, x_padding = 1, branch_length_scale = 1, use_y_shift = TRUE) {
@@ -273,22 +274,3 @@ RecPhyloLayout <- R6::R6Class("RecPhyloLayout",
     }
   )
 )
-as.data.frame.phyloXML_layout <- function(cl) {
-  fields <- setdiff(names(cl), "children")
-  rbind(
-    as.data.frame(cl[fields]),
-    Reduce(rbind, lapply(cl$children, as.data.frame))
-  )
-}
-merge_layout <- function(phylogeny, layout) {
-  res <- merge(
-    as.data.frame(phylogeny),
-    layout,
-    by = "name"
-  )
-  annot <- attr(phylogeny, "annot", exact = TRUE)
-  if (!is.null(annot)) {
-    res <- merge(res, annot, all.x = TRUE)
-  }
-  res
-}

@@ -1,75 +1,95 @@
-#' Get the path to an example RecPhyloXML
+#' Get examples for recPhyloXML or phyloXML objects
 #'
-#' @param name The name of the example.
-#'
-#' @returns
-#' If name is `NULL`, a vector of possible examples. Otherwise, the
-#' path to the requested example.
+#' @returns An example of the requested type.
 #'
 #' @export
-recphylo_example <- function(name = NULL) {
-  if (is.null(name)) {
-    dir(system.file("extdata", package = "recPhyloParse"))
-  } else {
-    system.file("extdata", name, package = "recPhyloParse", mustWork = TRUE)
-  }
+#' @name phyloXML_examples
+example_recPhyloXML_file <- function(name = NULL) {
+  system.file("extdata", "recphyloxml_syntax_example_1.recphyloxml", package = "recPhylo", mustWork = TRUE)
 }
 
+#' @export
+#' @rdname phyloXML_examples
+example_phyloXML_file <- function(name = NULL) {
+  system.file("extdata", "phyloxml_syntax_example_1.phyloxml", package = "recPhylo", mustWork = TRUE)
+}
 
-#' Find the Most Recent Common Ancestor (MRCA) in a Phylogenetic List
+#' @export
+#' @rdname phyloXML_examples
+example_recPhyloXML <- function() {
+  read_recPhyloXML(example_recPhyloXML_file())
+}
+
+#' @export
+#' @rdname phyloXML_examples
+example_phyloXML <- function() {
+  read_phyloXML(example_phyloXML_file())
+}
+
+#' @export
+#' @rdname phyloXML_examples
+example_phyloXML_phylogeny <- function() {
+  phyloXML <- example_phyloXML()
+  phyloXML[[1]]
+}
+
+#' @export
+#' @rdname phyloXML_examples
+example_phyloXML_clade <- function() {
+  phylo <- example_phyloXML_phylogeny()
+  phylo$clade
+}
+
+#' Convert phyloXML layout to data frame
 #'
-#' This function searches through a binary phylogenetic tree represented
-#' as a list for the most recent common ancestor (MRCA) of a specified
-#' set of nodes. The tree is expected to be provided as a recursive list
-#' structure with `left_child` and `right_child` elements defining the
-#' bifurcations, and `name` elements defining the node names. Nodes in
-#' the tree should be uniquely named.
+#' This function converts a phyloXML layout (a list structure) into a data frame.
 #'
-#' @param phylo_list A list representing the phylogenetic tree. This
-#'   list should have elements `name` for the node names, and
-#'   `left_child` and `right_child` for the branches, recursively
-#' @param nodes A character vector with the names of the nodes for which
-#'   the MRCA is sought
+#' @param cl A list representing the phyloXML layout. The list sholud have multiple nested lists under the element named 'children'.
 #'
-#' @return Returns the name of the MRCA node if found; otherwise, `NA`.
-#' Additionally, if `NA` is returned, an attribute "which_nodes" is
-#' added to the result. This attribute is a logical vector indicating
-#' which of the nodes specified in the `nodes` argument are present in
-#' the subtree where the search ended.
+#' @return A data frame containing the concatenated elements of the phyloXML layout.
 #'
 #' @examples
-#' # Construct a simple phylogenetic tree
-#' tree <- list(name="root",
-#'              left_child=list(name="A",
-#'                              left_child=NULL,
-#'                              right_child=NULL),
-#'              right_child=list(name="BC",
-#'                               left_child=list(name="B",
-#'                                               left_child=NULL,
-#'                                               right_child=NULL),
-#'                               right_child=list(name="C",
-#'                                                left_child=NULL,
-#'                                                right_child=NULL)))
-#' # Find the MRCA of nodes "A" and "B"
-#' mrca(tree, c("A", "B"))
+#' cl <- list(name = "root", value = 1, children = list(
+#'               list(name = "child1", value = 2, children = list()),
+#'               list(name = "child2", value = 3, children = list())))
+#' as.data.frame.phyloXML_layout(cl)
 #'
 #' @export
-mrca <- function(phylo_list, nodes) {
-  mrcas <- lapply(phylo_list$clade, mrca, nodes)
-  if (sum(!is.na(mrcas)) == 1) {
-    return(mrcas[[which(!is.na(mrcas))]])
+as.data.frame.phyloXML_layout <- function(cl) {
+  fields <- setdiff(names(cl), "children")
+  rbind(
+    as.data.frame(cl[fields]),
+    Reduce(rbind, lapply(cl$children, as.data.frame))
+  )
+}
+
+#' Merge Phylogeny Data with Layout Data
+#'
+#' This function merges a `phyloXML_phylogeny` list with a layout data frame based on a common column 'name'.
+#' Additionally, it merges annotation data if present in the phylogeny.
+#'
+#' @param phylogeny A list of class `phyloXML_phylogeny, potentially annotated with an `annot` attribute.
+#' @param layout A data frame representing the layout data.
+#'
+#' @return A data frame resulting from the merge of the phylogeny and layout data frames, with annotation data if available.
+#'
+#' @examples
+#' phylogeny <- example_phyloXML_phylogeny()
+#' layout <- data.frame(name = c("unnamed", "Octopus", "Bacteria", "E. coli", "B. subtilis"), position = c(100, 100, 200, 150, 250))
+#' attr(phylogeny, "annot") <- data.frame(name = c("Octopus"), annotation = c("annot1"))
+#' merge_layout(phylogeny, layout)
+merge_layout <- function(phylogeny, layout) {
+  # NOTE: phyolgeny lists are automatically casted to data.frame
+  res <- merge(
+    phylogeny,
+    layout,
+    by = "name"
+  )
+  annot <- attr(phylogeny, "annot", exact = TRUE)
+  if (!is.null(annot)) {
+    res <- merge(res, annot, all.x = TRUE)
   }
-  set <- nodes %in% phylo_list$name
-  if (length(mrcas) > 0) {
-   set <- set | Reduce(`|`, lapply(mrcas, attr, "which_nodes"))
-  }
-  if (all(set)) {
-    return(phylo_list)
-  } else {
-    ret <- NA
-    attr(ret, "which_nodes") <- set
-    return(ret)
-  }
+  res
 }
 
 # XXX: I'm trying to upstream this to the ape package! https://github.com/emmanuelparadis/ape/pull/120
@@ -122,19 +142,4 @@ phylo_to_xml_clades <- function(parent_idx, tree) {
     xml2::xml_add_child(parent, child)
   })
   return(parent)
-}
-
-nextperm <- function(vec) {
-  stopifnot(length(vec) > 0)
-  pivots <- which(vec[2:length(vec)] > vec[1:(length(vec)-1)])
-  if (length(pivots) == 0) {
-    return(NULL)
-  }
-  pivot <- max(pivots)
-  tmp <- vec[pivot]
-  successor <- which.min(vec[seq_along(vec) > pivot & vec > vec[pivot]]) + pivot
-  vec[pivot] <- vec[successor]
-  vec[successor] <- tmp
-  vec[(pivot+1):length(vec)] <- rev(vec[(pivot+1):length(vec)])
-  vec
 }
