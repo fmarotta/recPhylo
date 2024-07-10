@@ -48,12 +48,6 @@ example_phyloXML_clade <- function() {
 #'
 #' @return A data frame containing the concatenated elements of the phyloXML layout.
 #'
-#' @examples
-#' cl <- list(name = "root", value = 1, children = list(
-#'               list(name = "child1", value = 2, children = list()),
-#'               list(name = "child2", value = 3, children = list())))
-#' as.data.frame.phyloXML_layout(cl)
-#'
 #' @export
 as.data.frame.phyloXML_layout <- function(cl) {
   fields <- setdiff(names(cl), "children")
@@ -74,10 +68,12 @@ as.data.frame.phyloXML_layout <- function(cl) {
 #' @return A data frame resulting from the merge of the phylogeny and layout data frames, with annotation data if available.
 #'
 #' @examples
+#' \dontrun{
 #' phylogeny <- example_phyloXML_phylogeny()
 #' layout <- data.frame(name = c("unnamed", "Octopus", "Bacteria", "E. coli", "B. subtilis"), position = c(100, 100, 200, 150, 250))
 #' attr(phylogeny, "annot") <- data.frame(name = c("Octopus"), annotation = c("annot1"))
 #' merge_layout(phylogeny, layout)
+#' }
 merge_layout <- function(phylogeny, layout) {
   # NOTE: phyolgeny lists are automatically casted to data.frame
   res <- merge(

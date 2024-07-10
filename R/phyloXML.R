@@ -226,7 +226,7 @@ as.data.frame.recPhyloXML <- function(recphylo_xml) {
 }
 
 #' @export
-print.phyloXML <- function(phylo_xml) {
+print.phyloXML <- function(phylo_xml, ...) {
   n_phylogenies <- length(phylo_xml)
   cat("phyloXML object with", n_phylogenies, if (n_phylogenies == 1) "phylogeny.\n" else "phylogenies.\n")
   lapply(seq_along(phylo_xml), function(idx) print(phylo_xml[[idx]], idx = idx))
@@ -234,7 +234,7 @@ print.phyloXML <- function(phylo_xml) {
 }
 
 #' @export
-print.phyloXML_phylogeny <- function(phy, idx = NULL) {
+print.phyloXML_phylogeny <- function(phy, idx = NULL, ...) {
   fields <- setdiff(names(phy), c("clade", "idx"))
   leaf_status <- traverse_clades(phy$clade, function(cl) {
     length(cl$clade) == 0
@@ -255,7 +255,7 @@ print.phyloXML_phylogeny <- function(phy, idx = NULL) {
 }
 
 #' @export
-print.phyloXML_clade <- function(cl, indent = "") {
+print.phyloXML_clade <- function(cl, indent = "", ...) {
   fields <- setdiff(names(cl), c("clade"))
   cat(indent, cl$name, "\n", sep = "")
   lapply(cl$clade, print, indent = paste0(indent, "  "))
@@ -263,7 +263,7 @@ print.phyloXML_clade <- function(cl, indent = "") {
 }
 
 #' @export
-print.recPhyloXML <- function(recphylo_xml) {
+print.recPhyloXML <- function(recphylo_xml, ...) {
   n_gene_trees <- length(recphylo_xml$recGeneTrees)
   cat("recPhyloXML object with 1 spTree and", n_gene_trees, if (n_gene_trees == 1) "recGeneTree.\n" else "recGeneTrees.\n")
   cat("spTree:\n")
@@ -502,6 +502,8 @@ import_branch_lengths.recPhyloXML <- function(x, phylo) {
 #' @examples
 #' phylogeny <- example_phyloXML_phylogeny()
 #' flipped_phylogeny <- flip_children(phylogeny, "Bacteria")
+#'
+#' @export
 flip_children <- function(x, name, perm = NULL) {
   UseMethod("flip_children")
 }
@@ -659,7 +661,7 @@ clear_annot <- function(x) {
 
 #' @export
 clear_annot.phyloXML <- function(x) {
-  lapply(x, clear_annot, df = df)
+  lapply(x, clear_annot)
 }
 
 #' @export

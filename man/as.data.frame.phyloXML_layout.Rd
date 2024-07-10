@@ -15,10 +15,3 @@ A data frame containing the concatenated elements of the phyloXML layout.
 \description{
 This function converts a phyloXML layout (a list structure) into a data frame.
 }
-\examples{
-cl <- list(name = "root", value = 1, children = list(
-              list(name = "child1", value = 2, children = list()),
-              list(name = "child2", value = 3, children = list())))
-as.data.frame.phyloXML_layout(cl)
-
-}

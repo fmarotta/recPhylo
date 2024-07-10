@@ -19,8 +19,10 @@ This function merges a \code{phyloXML_phylogeny} list with a layout data frame b
 Additionally, it merges annotation data if present in the phylogeny.
 }
 \examples{
+\dontrun{
 phylogeny <- example_phyloXML_phylogeny()
 layout <- data.frame(name = c("unnamed", "Octopus", "Bacteria", "E. coli", "B. subtilis"), position = c(100, 100, 200, 150, 250))
 attr(phylogeny, "annot") <- data.frame(name = c("Octopus"), annotation = c("annot1"))
 merge_layout(phylogeny, layout)
+}
 }

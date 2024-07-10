@@ -28,4 +28,5 @@ Flipping the order of children does NOT change the topology of the tree. It matt
 \examples{
 phylogeny <- example_phyloXML_phylogeny()
 flipped_phylogeny <- flip_children(phylogeny, "Bacteria")
+
 }
