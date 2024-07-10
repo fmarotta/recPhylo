@@ -46,9 +46,9 @@ RecPhyloLayout <- R6::R6Class("RecPhyloLayout",
         ggplot2::geom_point(data = spNodes, ggplot2::aes(x, y)) +
         ggplot2::geom_text(data = spNodes, ggplot2::aes(x, y, label = name)) +
         ggplot2::geom_point(data = geneNodes, ggplot2::aes(x, y)) +
-        ggplot2::geom_line(data = geneEdges, ggplot2::aes(x, y, group = group, color = lineage, linetype = paste(event_type, leg, sep = "_")), lineend = "round", show.legend = F) +
+        ggplot2::geom_line(data = geneEdges, ggplot2::aes(x, y, group = group, color = lineage, linetype = leg_type), lineend = "round", show.legend = F) +
         ggplot2::geom_point(data = auxpoints, ggplot2::aes(x, y), alpha = 0) +
-        ggplot2::scale_linetype_manual(values = c("loss_vertical" = 2, "transferBack_transfer" = 3), na.value = 1) +
+        ggplot2::scale_linetype_manual(values = c("loss_vertical" = 2, "transferBack" = 3), na.value = 1) +
         # coord_polar() +
         # coord_flip() +
         # theme_void() +
