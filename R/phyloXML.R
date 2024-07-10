@@ -194,7 +194,7 @@ parse_recGeneTree_clade <- function(clade_xml) {
   return(clade)
 }
 
-# data.frame interop
+# S3 interop
 
 #' @export
 as.data.frame.phyloXML <- function(phylo_xml) {
@@ -223,6 +223,54 @@ as.data.frame.recPhyloXML <- function(recphylo_xml) {
   recGene_df <- as.data.frame(recphylo_xml$recGeneTrees)
   recGene_df$tree_type <- "recGeneTree"
   rbind(sp_df, recGene_df)
+}
+
+#' @export
+print.phyloXML <- function(phylo_xml) {
+  n_phylogenies <- length(phylo_xml)
+  cat("phyloXML object with", n_phylogenies, if (n_phylogenies == 1) "phylogeny.\n" else "phylogenies.\n")
+  lapply(seq_along(phylo_xml), function(idx) print(phylo_xml[[idx]], idx = idx))
+  invisible(NULL)
+}
+
+#' @export
+print.phyloXML_phylogeny <- function(phy, idx = NULL) {
+  fields <- setdiff(names(phy), c("clade", "idx"))
+  leaf_status <- traverse_clades(phy$clade, function(cl) {
+    length(cl$clade) == 0
+  })
+  if (!is.null(idx)) {
+    cat("[[", idx, "]] ", sep = "")
+  }
+  cat("phyloXML_phylogeny object with ", length(leaf_status), " nodes (", sum(leaf_status), " leaves).\n", sep = "")
+  str(phy[fields])
+  annot <- attr(phy, "annot", exact = TRUE)
+  cat("Attributes:\n")
+  if (!is.null(annot)) {
+    str(annot)
+  } else {
+    cat("NULL\n")
+  }
+  invisible(NULL)
+}
+
+#' @export
+print.phyloXML_clade <- function(cl, indent = "") {
+  fields <- setdiff(names(cl), c("clade"))
+  cat(indent, cl$name, "\n", sep = "")
+  lapply(cl$clade, print, indent = paste0(indent, "  "))
+  invisible(NULL)
+}
+
+#' @export
+print.recPhyloXML <- function(recphylo_xml) {
+  n_gene_trees <- length(recphylo_xml$recGeneTrees)
+  cat("recPhyloXML object with 1 spTree and", n_gene_trees, if (n_gene_trees == 1) "recGeneTree.\n" else "recGeneTrees.\n")
+  cat("spTree:\n")
+  print(recphylo_xml$spTree)
+  cat("recGeneTrees:\n")
+  lapply(seq_along(recphylo_xml$recGeneTrees), function(idx) print(recphylo_xml$recGeneTrees[[idx]], idx = idx))
+  invisible(NULL)
 }
 
 # Public utils
@@ -323,6 +371,12 @@ find_mrca_clade <- function(clade, node_names) {
     attr(ret, "which_node_names") <- set
     return(ret)
   }
+}
+
+#' @export
+select_phylogeny <- function(phyloxml, idx) {
+  # To be used with pipes, e.g. phylo |> select_phylogeny(1) |> import_branch_lengths(ape) |> bla...
+  phyloxml[[idx]]
 }
 
 # Public branch length utils
@@ -499,33 +553,45 @@ flip_recGene_children <- function(x, name, perm = NULL) {
   # branchingOut, flip the mrca of the event_location species.
   # TODO: why couldn't we do x$recGeneTrees[[1]] <- flip_children(x$recGeneTrees[[1]]
   x$recGeneTrees <- lapply(x$recGeneTrees, flip_children, name = name, perm = perm)
+  x
 }
 
 # Public annot utils
 
+# TODO: add clear_annot() method
+
+#' @export
 add_annot <- function(x, df) {
   UseMethod("add_annot")
 }
 
+#' @export
 add_annot.phyloXML <- function(x, df) {
-  invisible(lapply(x, add_annot, df = df))
+  lapply(x, add_annot, df = df)
 }
 
+#' @export
 add_annot.phyloXML_phylogeny <- function(x, df) {
-  attr(x, "annot") <- df
-  invisible(x)
+  if (is.null(attr(x, "annot", exact = TRUE))) {
+    attr(x, "annot") <- df
+  } else {
+    attr(x, "annot") <- merge(attr(x, "annot", exact = TRUE), df, by = "name", all = TRUE)
+  }
+  x
 }
 
+#' @export
 add_sp_annot <- function(x, df) {
   # attr(x, "sp_annot") <- df  # duplicated attrs are not good
-  add_annot(x$spTree, df)
-  invisible(x)
+  x$spTree <- add_annot(x$spTree, df)
+  x
 }
 
+#' @export
 add_recGene_annot <- function(x, df) {
   # attr(x, "recGene_annot") <- df
-  add_annot(x$recGeneTrees, df)
-  invisible(x)
+  x$recGeneTrees <- add_annot(x$recGeneTrees, df)
+  x
 }
 
 # Private utils

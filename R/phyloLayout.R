@@ -1,3 +1,4 @@
+#' @export
 PhyloLayout <- R6::R6Class("PhyloLayout",
   public = list(
     initialize = function(phylogeny, use_branch_length = TRUE, x_padding = 1, branch_length_scale = 1) {
@@ -77,7 +78,7 @@ PhyloLayout <- R6::R6Class("PhyloLayout",
           branch_length <- 1
           if (isTRUE(private$warnings$missing_branch_length)) {
             private$warnings$missing_branch_length <- FALSE
-            warning("No branch length was found in clade ", clade$name, ". Setting branch length to 1 automatically.", call. = FALSE)
+            warning("No branch length was found in clade ", clade$name, ". Setting it to 1 automatically.", call. = FALSE)
           }
         }
         branch_length <- branch_length * private$config$branch_length_scale

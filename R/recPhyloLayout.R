@@ -126,7 +126,7 @@ RecPhyloLayout <- R6::R6Class("RecPhyloLayout",
           clade$branch_length * private$config$branch_length_scale
         } else {
           if (isTRUE(private$warnings$missing_branch_length)) {
-            warning("No branch length was found in clade ", clade$name, ". Setting branch length to 1 automatically.", call. = FALSE)
+            warning("No branch length was found in clade ", clade$name, ". Setting it to 1 automatically.", call. = FALSE)
             private$warnings$missing_branch_length <- FALSE
           }
           private$config$branch_length_scale
