@@ -229,7 +229,7 @@ as.data.frame.recPhyloXML <- function(recphylo_xml) {
 
 #' Decorate Clades with a Specific Attribute
 #'
-#' This function decorates each node in a clade with a new attribute computed by a user-defined function. It recursively applies the function to each child node in the clade.
+#' This function adds or modify an attribute of each node. The attribute is computed by a user-defined function which takes the node as input. decorate_clades() returns a new object of `phyloXML_clade` class.
 #'
 #' @param clade A list representing a phylogenetic clade. Each node in the clade is expected to have a `clade` element containing its child nodes.
 #' @param attr A character string representing the name of the attribute to be added to each node.
@@ -327,6 +327,46 @@ find_mrca_clade <- function(clade, node_names) {
 
 # Public branch length utils
 
+# XXX: importing branch lengths makes sense only for individual phylogenies, not for phyloXML objects (which are lists of phylogenies). Why would all the phylogenies in the list have the same branch lengths? Anyway, one can easily use lapply in that case.
+# But maybe we should provide a helper function that returns the whole phyloXML, so that one doesn't have to repeat the indexing... e.g. we could do
+# import_branch_lengths <- function(phyloXML, phylo, which.phylogeny) {
+#   phyloXML[[which.phylogeny]] <- import_branch_lengths(phyloXML[[which.phylogeny]], phylo)
+#   return(phyloXML)
+# }
+
+#' Import Branch Lengths from a `phylo` Object
+#'
+#' @description This function takes branch lengths from an `ape::phylo`
+#' object and imports them into the corresponding nodes of a
+#' `phyloXML_phylogeny` or `recPhyloXML` object. For a `recPhyloXML`,
+#' the branch lengths are imported only to the species tree.
+#'
+#' @param x Either a `phyloXML_phylogeny` or a `recPhyloXML` object to which the branch lengths are to be imported.
+#' @param phylo A `phylo` object containing the branch lengths.
+#' 
+#' @return The modified phylogeny with the branch lengths from the `phylo` object.
+#'
+#' @details The `edge.length` and `node.label` fields of the `phylo` object must exist.
+#'
+#' @examples
+#' \dontrun{
+#' phyloxml <- example_phyloXML()
+#' ape_tree <- ape::read.tree("path/to/tree.nwk")
+#' phyloxml[[1]] <- import_branch_lengths(phyloxml[[1]], ape_tree)
+#' }
+#'
+#' \dontrun{
+#' recphyloxml <- example_recPhyloXML()
+#' ape_tree <- ape::read.tree("path/to/tree.nwk")
+#' recphyloxml <- import_branch_lengths(recphyloxml, ape_tree)
+#' }
+#'
+#' @export
+import_branch_lengths <- function(x, phylo) {
+  UseMethod("import_branch_lengths")
+}
+
+#' @export
 import_branch_lengths.phyloXML_phylogeny <- function(x, phylo) {
   if (is.null(phylo$edge.length)) {
     stop("`edge.length` not found in phylo object.")
@@ -354,6 +394,7 @@ import_branch_lengths.phyloXML_phylogeny <- function(x, phylo) {
   x
 }
 
+#' @export
 import_branch_lengths.recPhyloXML <- function(x, phylo) {
   x$spTree <- import_branch_lengths(x$spTree, phylo)
   x
@@ -361,12 +402,35 @@ import_branch_lengths.recPhyloXML <- function(x, phylo) {
 
 # Public flipping utils
 
+#' Flip Children of a Specified Clade
+#'
+#' @description This function permutes the order of child clades. Every time it is called on the same parent clade, the order of its children becomes the next permutation in lexycographic order, coming back to the initial values when all possibilities have been exhausted. For example, for a node with three children, the initial order will be c(1, 2, 3); calling flip_children() once will give c(1, 3, 2), calling it again c(2, 1, 3), then c(2, 3, 1), c(3, 1, 2), c(3, 2, 1), and finally it will come back to c(1, 2, 3). The optional argument `perm` allows to specify a target permutation directly.
+#'
+#' @param x A `phyloXML` or `phyloXML_phylogeny` object containing the clades.
+#' @param name A character string specifying the name of the clade whose children are to be flipped.
+#' @param perm An optional numeric vector specifying the new permutation order of the children. If `NULL`, the next permutation in lexycographic order is used.
+#' 
+#' @return A new object with the child clades of the specified clade reordered.
+#'
+#' @details When applied to a `phyloXML` object, all of the phylogenies will be affected (if they have a clade with the specified name).
+#
+#' @note Flipping the order of children does NOT change the topology of the tree. It matters only for visualization purposes.
+#'
+#' @examples
+#' phylogeny <- example_phyloXML_phylogeny()
+#' flipped_phylogeny <- flip_children(phylogeny, "Bacteria")
+flip_children <- function(x, name, perm = NULL) {
+  UseMethod("flip_children")
+}
+
+#' @export
 flip_children.phyloXML <- function(x, name, perm = NULL) {
   # TODO: consider whether this method makes sense.
   # Consider consistency when it's applied to recGeneTrees.
   lapply(x, flip_children, name = name, perm = perm)
 }
 
+#' @export
 flip_children.phyloXML_phylogeny <- function(x, name, perm = NULL) {
   x$clade <- flip_children(x$clade, name = name, perm = perm)
   x
@@ -379,7 +443,7 @@ flip_children.phyloXML_clade <- function(x, name, perm = NULL) {
       return(cl$clade)
     }
     current_order <- if (is.null(attr(cl, "children_permutation", exact = TRUE))) {
-      seq_along(cl$children)
+      seq_along(cl$clade)
     } else {
       attr(cl, "children_permutation")
     }
@@ -392,12 +456,23 @@ flip_children.phyloXML_clade <- function(x, name, perm = NULL) {
     }
     attr(cl, "children_permutation") <- new_order
     if (is.null(new_order)) {
-      new_order <- seq_along(cl$children)
+      new_order <- seq_along(cl$clade)
     }
     cl$clade[order(current_order)][new_order]
   })
 }
 
+#' Flip the children of a clade in a spTree
+#'
+#' @inherit flip_children
+#'
+#' @param x A `recPhyloXML` object.
+#'
+#' @return The `recPhyloXML` object with the modified spTree.
+#'
+#' @details Only the spTree attribute will be affected.
+#'
+#' @export
 flip_sp_children <- function(x, name, perm = NULL) {
   x$spTree <- flip_children(x$spTree, name = name, perm = perm)
   # TODO: Consider flipping the genes as well.
@@ -406,6 +481,17 @@ flip_sp_children <- function(x, name, perm = NULL) {
   x
 }
 
+#' Flip the children of a clade in recGeneTrees
+#'
+#' @inherit flip_children
+#'
+#' @param x A `recPhyloXML` object.
+#'
+#' @return The `recPhyloXML` object with the modified recGeneTrees.
+#'
+#' @details All of the recGeneTrees phylogenies will be affected, if they have a clade of the specified name.
+#'
+#' @export
 flip_recGene_children <- function(x, name, perm = NULL) {
   # TODO: if name is anything but a duplication, flipping will not have any
   # effect. If it's a speciation, we should advise user to flip the

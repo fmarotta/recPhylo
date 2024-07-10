@@ -19,7 +19,7 @@ decorate_clades(clade, attr, FUN, ...)
 The input \code{clade} list, with each node augmented by the computed attribute.
 }
 \description{
-This function decorates each node in a clade with a new attribute computed by a user-defined function. It recursively applies the function to each child node in the clade.
+This function adds or modify an attribute of each node. The attribute is computed by a user-defined function which takes the node as input. decorate_clades() returns a new object of \code{phyloXML_clade} class.
 }
 \examples{
 # Create a sample clade
