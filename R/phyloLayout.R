@@ -1,5 +1,5 @@
 #' @export
-PhyloLayout <- R6::R6Class("PhyloLayout",
+PhylogenyLayout <- R6::R6Class("PhylogenyLayout",
   public = list(
     initialize = function(phylogeny, use_branch_length = TRUE, x_padding = 1, branch_length_scale = 1) {
       stopifnot("phyloXML_phylogeny" %in% class(phylogeny))
@@ -12,7 +12,7 @@ PhyloLayout <- R6::R6Class("PhyloLayout",
       private$layout_phylogeny <- private$simple_phylo_layout(private$.phylogeny$clade)
       invisible(self)
     },
-    plot = function() {
+    testplot = function() {
       if (!requireNamespace("ggplot2", quietly = T)) {
         stop("Please install `ggplot2` before using the plot() method.")
       }
@@ -78,7 +78,7 @@ PhyloLayout <- R6::R6Class("PhyloLayout",
           branch_length <- 1
           if (isTRUE(private$warnings$missing_branch_length)) {
             private$warnings$missing_branch_length <- FALSE
-            warning("No branch length was found in clade ", clade$name, ". Setting it to 1 automatically.", call. = FALSE)
+            warning("No branch length was found in clade '", clade$name, "'. Setting it to 1 automatically.", call. = FALSE)
           }
         }
         branch_length <- branch_length * private$config$branch_length_scale
@@ -121,3 +121,8 @@ PhyloLayout <- R6::R6Class("PhyloLayout",
     }
   )
 )
+
+#' @export
+layout_phylogeny <- function(phylogeny, ...) {
+  PhylogenyLayout$new(phylogeny, ...)$layout
+}

@@ -108,7 +108,7 @@ parse_phylogeny <- function(phylogeny_xml, type) {
   rooted <- as.logical(xml2::xml_attr(phylogeny_xml, "rooted"))
   if (is.na(rooted)) {
     rooted <- length(clade$clade) == 2
-    warning("Phylogeny doesn't have a 'rooted' attribute. Inferred '", rooted, "'.")
+    warning("Phylogeny doesn't have a 'rooted' attribute. Inferred '", rooted, "'.", call. = FALSE)
   }
   phylogeny <- list(
     name = xml2::xml_text(xml2::xml_find_first(phylogeny_xml, "./name")),
@@ -134,7 +134,7 @@ parse_clade <- function(clade_xml) {
   branch_length_attr <- as.numeric(xml2::xml_attr(clade_xml, "branch_length"))
   branch_length_tag <- xml2::xml_double(xml2::xml_find_first(clade_xml, "branch_length"))
   branch_length <- if (!is.na(branch_length_attr) && !is.na(branch_length_tag)) {
-    warning("clade '", name, "' defines branch length both with an attribute and with a tag, which is ambiguous. I chose the attribute value, ", branch_length_attr, ".")
+    warning("clade '", name, "' defines branch length both with an attribute and with a tag, which is ambiguous. I chose the attribute value, ", branch_length_attr, ".", call. = FALSE)
     branch_length_attr
   } else if (!is.na(branch_length_attr)) {
     branch_length_attr
@@ -314,6 +314,8 @@ decorate_clades <- function(clade, attr, FUN, ...) {
 #'
 #' @return A list of results from applying `FUN` to each clade in the specified order.
 #'
+#' @note If FUN returns `NULL`, the value will not be included in the output. In other words, 
+#'
 #' @examples
 #' clade <- example_phyloXML_clade()
 #' extract_clade_name <- function(clade) {
@@ -344,17 +346,25 @@ traverse_clades <- function(clade, FUN, ..., .order = "pre") {
 #' @param node_names A character vector containing the names of the
 #' nodes for which the MRCA is to be found.
 #'
-#' @return The function returns the MRCA clade of the specified nodes  .
-#' if found If the MRCA is not found, the function returns `NA` with   .
-#' an attribute "which_node_names" indicating the nodes that were not  .
-#' found in the tree                                                   .
+#' @return The function returns the name of the MRCA of the specified
+#' nodes, if found. If the MRCA is not found, the function returns `NA`
+#' with an attribute "which_node_names" indicating the nodes that were
+#' not found in the tree.
 #'
 #' @examples
 #' clade <- example_phyloXML_clade()
-#' find_mrca_clade(clade, c("B. subtilis", "E. coli"))
-#' find_mrca_clade(clade, c("B. subtilis", "Bogus"))
+#' find_mrca(clade, c("B. subtilis", "E. coli"))
+#' find_mrca(clade, c("B. subtilis", "Bogus"))
 #'
 #' @export
+find_mrca <- function(clade, node_names) {
+  mrca_clade <- find_mrca_clade(clade, node_names)
+  if (length(mrca_clade) == 1 && is.na(mrca_clade)) {
+    return(mrca_clade)
+  }
+  mrca_clade$name
+}
+
 find_mrca_clade <- function(clade, node_names) {
   mrcas <- lapply(clade$clade, find_mrca_clade, node_names)
   if (sum(!is.na(mrcas)) == 1) {
@@ -371,6 +381,25 @@ find_mrca_clade <- function(clade, node_names) {
     attr(ret, "which_node_names") <- set
     return(ret)
   }
+}
+
+#' @export
+find_descendants <- function(clade, ancestor_name) {
+  dec_clade <- decorate_clades(clade, "clade", function(cl) {
+    if (cl$name == ancestor_name || !is.null(cl$descendant)) {
+      lapply(cl$clade, function(child) {
+        child$descendant <- TRUE
+        child
+      })
+    } else {
+      cl$clade
+    }
+  })
+  traverse_clades(dec_clade, function(cl) {
+    if (cl$name == ancestor_name || !is.null(cl$descendant)) {
+      return(cl$name)
+    }
+  })
 }
 
 #' @export
@@ -558,8 +587,21 @@ flip_recGene_children <- function(x, name, perm = NULL) {
 
 # Public annot utils
 
-# TODO: add clear_annot() method
-
+#' Add annotation to phyloXML objects
+#'
+#' @description Provide a data.frame with a `name` column matching the names of the clades in the phylogeny, and the new columns will be available in the layout for plotting.
+#'
+#' @param x A `phyloXML` or `phyloXML_phylogeny` object.
+#' @param df A data.frame with a `name` column, to be matched with the nodes in the phylogeny.
+#'
+#' @return The modified `phyloXML` or `phyloXML_phylogeny` object.
+#'
+#' @details If x is a `phyloXML` object, the annotation is added to all of its phylogenies.
+#'
+#' @note If some annotation was already present, the new data.frame is
+#' merged with the old one by the `name` column, keeping the existing
+#' annotation. Use clear_annot() to remove all annotations.
+#'
 #' @export
 add_annot <- function(x, df) {
   UseMethod("add_annot")
@@ -572,6 +614,7 @@ add_annot.phyloXML <- function(x, df) {
 
 #' @export
 add_annot.phyloXML_phylogeny <- function(x, df) {
+  stopifnot(inherits(df, "data.frame"))
   if (is.null(attr(x, "annot", exact = TRUE))) {
     attr(x, "annot") <- df
   } else {
@@ -580,6 +623,20 @@ add_annot.phyloXML_phylogeny <- function(x, df) {
   x
 }
 
+#' Add annotation to recPhyloXML objects
+#'
+#' @inheritParams add_annot
+#' @inherit add_annot description
+#'
+#' @param x An object of `recPhyloXML` class.
+#'
+#' @details add_sp_annot() adds the annotation to the spTree while add_recGene_annot() to the recGeneTrees.
+#'
+#' @note If some annotation was already present, the new data.frame is
+#' merged with the old one by the `name` column, keeping the existing
+#' annotation. Use clear_sp_annot() or clear_recGene_annot() to remove
+#' all annotations.
+#'
 #' @export
 add_sp_annot <- function(x, df) {
   # attr(x, "sp_annot") <- df  # duplicated attrs are not good
@@ -588,9 +645,40 @@ add_sp_annot <- function(x, df) {
 }
 
 #' @export
+#' @rdname add_sp_annot
 add_recGene_annot <- function(x, df) {
   # attr(x, "recGene_annot") <- df
   x$recGeneTrees <- add_annot(x$recGeneTrees, df)
+  x
+}
+
+#' @export
+clear_annot <- function(x) {
+  UseMethod("clear_annot")
+}
+
+#' @export
+clear_annot.phyloXML <- function(x) {
+  lapply(x, clear_annot, df = df)
+}
+
+#' @export
+clear_annot.phyloXML_phylogeny <- function(x) {
+  attr(x, "annot") <- NULL
+  x
+}
+
+#' @export
+clear_sp_annot <- function(x) {
+  # attr(x, "sp_annot") <- df  # duplicated attrs are not good
+  x$spTree <- clear_annot(x$spTree)
+  x
+}
+
+#' @export
+clear_recGene_annot <- function(x) {
+  # attr(x, "recGene_annot") <- df
+  x$recGeneTrees <- clear_annot(x$recGeneTrees)
   x
 }
 

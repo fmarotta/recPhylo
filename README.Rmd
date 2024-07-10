@@ -13,40 +13,79 @@ knitr::opts_chunk$set(
 )
 ```
 
-# recPhyloParse
+# recPhylo
 
 <!-- badges: start -->
-  [![R-CMD-check](https://github.com/fmarotta/recPhyloParse/actions/workflows/R-CMD-check.yaml/badge.svg)](https://github.com/fmarotta/recPhyloParse/actions/workflows/R-CMD-check.yaml)
-[![Codecov test coverage](https://codecov.io/gh/fmarotta/recPhyloParse/branch/main/graph/badge.svg)](https://app.codecov.io/gh/fmarotta/recPhyloParse?branch=main)
+  [![R-CMD-check](https://github.com/fmarotta/recPhylo/actions/workflows/R-CMD-check.yaml/badge.svg)](https://github.com/fmarotta/recPhylo/actions/workflows/R-CMD-check.yaml)
+[![Codecov test coverage](https://codecov.io/gh/fmarotta/recPhylo/branch/main/graph/badge.svg)](https://app.codecov.io/gh/fmarotta/recPhylo?branch=main)
 <!-- badges: end -->
 
-recPhyloParse provides a way to import reconciliated phylogenies into R in a way that makes it easy to plot the trees with ggplot2. The starting point is an XML file following the [recPhyloXML format](http://phylariane.univ-lyon1.fr/recphyloxml/), which will be parsed into an [R6 object](https://r6.r-lib.org/index.html). During the parsing, the coordinates and attributes of all the plot elements will be appropriately extracted into data.frames, so that standard ggplot2 geoms can be used.
+`recPhylo` provides a way to import simple or reconciliated phylogenies into R in a way that makes it easy to plot the trees with `ggplot2`. The starting point is an XML file following either the [phyloXML](http://www.phyloxml.org/) or the [recPhyloXML format](http://phylariane.univ-lyon1.fr/recphyloxml/), which will be parsed into specific R objects. Dedicated `layout_*()` functions can convert these objects into data.frames ready to be used with ggplot.
+
+Contrary to `ggtree` or `ggraph`, with this package you don't get a plot directly from the tree object, but rather a pair of data.frames representing the computed layouts of nodes and edges.
+It is your responsibility, then, to use the appropriate ggplot geoms (typically geom_point() or geom_line()).
+The advantages of this approach are:
+
+* We don't need to duplicate existing geoms (e.g. we don't need to wrap geom_point() inside geom_node_point(), we can simply reuse geom_point())
+* We can make use of special geoms defined in other packages (e.g. geom_link2() from ggforce, without having to define a special geom for phylogeny objects)
+* We have better control over the layout and annotation: the x and y coordinates of all the objects are transparently saved in the layout data.frames, so it's straightforward to add custom ggplot elements corresponding to those coordinates (e.g. a tree and a multiple sequence alignment).
+* We can make use of other `ggplot2` tricks, like coord_polar(), to create new layouts "for free".
+* Should you want to use a graphics package different from `ggplot2`, you can reuse the layout computed by recPhylo.
+
+This package does not have as many features as `ggtree`. Use it if you are comfortable with `ggplot2` and like to have full control over your figures.
 
 ## Installation
 
-You can install the development version of recPhyloParse from [GitHub](https://github.com/) with:
+You can install the development version of recPhylo from [GitHub](https://github.com/) with:
 
 ``` r
 # install.packages("devtools")
-devtools::install_github("fmarotta/recPhyloParse")
+devtools::install_github("fmarotta/recPhylo")
 ```
 
 ## Example
 
-This is a basic example which shows you how to solve a common problem:
+### recPhylo objects
+
+This is a basic example which shows you how to plot a reconciliated phylogenetic tree.
 
 ```{r}
 
-library(recPhyloParse)
+library(recPhylo)
 library(ggplot2)
 
-recphylo_file <- system.file("extdata", "example_1.recphyloxml", package = "recPhyloParse")
-recphylo <- RecPhylo$new(recphylo_file, branch_length_scale = 5, x_padding = 4)
+recphylo_file <- system.file("extdata", "recphylo_example_1.xml", package = "recPhylo")
+recphylo_xml <- read_recPhyloXML(recphylo_file)
+recphylo_layout <- layout_recphylo(recphylo_xml, branch_length_scale = 5)
 
 ggplot() +
-  geom_line(data = recphylo$spEdges, aes(x, y, group = group)) +
-  geom_line(data = recphylo$recGeneEdges, aes(x, y, group = group, color = gsub("l+$", "", lineage), linetype = event_type), show.legend = F) +
-  scale_linetype_manual(values = c("loss_v" = 2, "transferBack" = 3), na.value = 1) +
+  geom_line(data = recphylo_layout$spEdges, aes(x, y, group = group)) +
+  geom_line(data = recphylo_layout$recGeneEdges, aes(x, y, group = group, color = lineage, linetype = leg_type), show.legend = F) +
+  scale_linetype_manual(values = c("loss_vertical" = 2, "transferBack" = 3), na.value = 1) +
+  theme_void() +
+  NULL
+
+```
+
+### Simple phylogeny objects
+
+Although the primary goal of the package was to plot reconciliated trees, for which there was no alternative in R, it is also possible to plot simple phylogenies.
+
+```{r}
+
+library(recPhylo)
+library(ggplot2)
+
+phylo_file <- system.file("extdata", "phylo_example_1.xml", package = "recPhylo")
+phylo_xml <- read_phyloXML(phylo_file)[[1]]
+phylo_xml <- add_annot(phylo_xml, data.frame(
+  name = find_descendants(phylo_xml$clade, "Bacteria"),
+  is_bacterium = TRUE
+))
+phylo_layout <- layout_phylogeny(phylo_xml, branch_length_scale = 5)
+
+ggplot() +
+  geom_line(data = phylo_layout$edges, aes(x, y, group = group, color = is_bacterium)) +
   theme_void() +
   NULL
 
@@ -54,22 +93,19 @@ ggplot() +
 
 ## Features
 
-- Parse and draw recPhyloXML trees with ggplot2
+- Parse and draw phyloXML or recPhyloXML trees with ggplot2
 - Three linear layouts: real branch lengths, uniform branch lengths, aligned leaves
 - Corresponding circular layouts "for free" thanks to coord_polar()
+- Manually adjust the space between clades
 - Swap left and right children of a species node
 - Swap children of a duplication event
 - Import branch lengths from another species tree file
 - Add custom annotation for species nodes, gene nodes, species edges, gene edges
+- Convenience methods to extract data from phylogenies or decorate them with additional attributes
 
 ## Bugs and missing features
 
-- We support only recphyloxml files with exactly one gene and one species tree
-- BifurcationOut events (as well as free-living species) are currently not supported
-- We don't have the ability to infer species tree from gene tree (this is a prerequisite for implementing the previous two, maybe I'll give it a shot)
+- bifurcationOut events are not supported (but planned)
+- We don't automatically scale the plot to make it look nicer (planned)
 - We make no attempt to minimise the edge crossings for lateral
   transfers (though you can manually swap left/right children to make the tree look better)
-- We don't automatically scale the plot to make it look nicer (planned)
-- We do not add clade attributes and internal elements as columns in the
-  resulting data.frame (we could add all these:
-  <http://www.phyloxml.org/documentation/version_1.20/phyloxml.html>)

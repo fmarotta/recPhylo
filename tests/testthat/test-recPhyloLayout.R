@@ -10,7 +10,7 @@ test_that("the plots with `branch_length` look fine", {
       x_padding = 3,
       use_y_shift = T,
       use_branch_length = T
-    )$plot()
+    )$testplot()
   )
   vdiffr::expect_doppelganger(
     "scale = 4, padding = 3, y_shift = T, branch_length = T",
@@ -19,7 +19,7 @@ test_that("the plots with `branch_length` look fine", {
       x_padding = 3,
       use_y_shift = T,
       use_branch_length = T
-    )$plot()
+    )$testplot()
   )
   vdiffr::expect_doppelganger(
     "scale = 5, padding = 3, y_shift = T, branch_length = T",
@@ -28,7 +28,7 @@ test_that("the plots with `branch_length` look fine", {
       x_padding = 3,
       use_y_shift = T,
       use_branch_length = T
-    )$plot()
+    )$testplot()
   )
 })
 
@@ -42,7 +42,7 @@ test_that("the plots without `branch_length` look fine", {
       x_padding = 3,
       use_y_shift = T,
       use_branch_length = F
-    )$plot()
+    )$testplot()
   )
   vdiffr::expect_doppelganger(
     "scale = 4, padding = 3, y_shift = T, branch_length = F",
@@ -51,7 +51,7 @@ test_that("the plots without `branch_length` look fine", {
       x_padding = 3,
       use_y_shift = T,
       use_branch_length = F
-    )$plot()
+    )$testplot()
   )
   vdiffr::expect_doppelganger(
     "scale = 5, padding = 3, y_shift = T, branch_length = F",
@@ -60,7 +60,7 @@ test_that("the plots without `branch_length` look fine", {
       x_padding = 3,
       use_y_shift = T,
       use_branch_length = F
-    )$plot()
+    )$testplot()
   )
 })
 
@@ -74,7 +74,7 @@ test_that("the plots without `y_shift` look fine", {
       x_padding = 3,
       use_y_shift = F,
       use_branch_length = T
-    )$plot()
+    )$testplot()
   )
   vdiffr::expect_doppelganger(
     "scale = 4, padding = 3, y_shift = F, branch_length = F",
@@ -83,6 +83,6 @@ test_that("the plots without `y_shift` look fine", {
       x_padding = 3,
       use_y_shift = F,
       use_branch_length = F
-    )$plot()
+    )$testplot()
   )
 })

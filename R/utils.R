@@ -5,13 +5,13 @@
 #' @export
 #' @name phyloXML_examples
 example_recPhyloXML_file <- function(name = NULL) {
-  system.file("extdata", "recphyloxml_syntax_example_1.recphyloxml", package = "recPhylo", mustWork = TRUE)
+  system.file("extdata", "recphylo_example_1.xml", package = "recPhylo", mustWork = TRUE)
 }
 
 #' @export
 #' @rdname phyloXML_examples
 example_phyloXML_file <- function(name = NULL) {
-  system.file("extdata", "phyloxml_syntax_example_1.phyloxml", package = "recPhylo", mustWork = TRUE)
+  system.file("extdata", "phylo_example_1.xml", package = "recPhylo", mustWork = TRUE)
 }
 
 #' @export

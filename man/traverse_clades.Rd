@@ -21,6 +21,9 @@ A list of results from applying \code{FUN} to each clade in the specified order.
 \description{
 This function traverses the clades of a phylogenetic tree, applying a specified function to each clade.
 }
+\note{
+If FUN returns \code{NULL}, the value will not be included in the output. In other words,
+}
 \examples{
 clade <- example_phyloXML_clade()
 extract_clade_name <- function(clade) {

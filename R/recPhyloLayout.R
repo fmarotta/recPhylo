@@ -29,7 +29,7 @@ RecPhyloLayout <- R6::R6Class("RecPhyloLayout",
       })
       invisible(self)
     },
-    plot = function() {
+    testplot = function() {
       if (!requireNamespace("ggplot2", quietly = T)) {
         stop("Please install `ggplot2` before using the plot() method.")
       }
@@ -274,3 +274,16 @@ RecPhyloLayout <- R6::R6Class("RecPhyloLayout",
     }
   )
 )
+
+#' @export
+layout_recphylo <- function(recphylo, ...) {
+  rp_layout <- RecPhyloLayout$new(recphylo, ...)
+  spLayout <- rp_layout$spLayout
+  recGeneLayout <- rp_layout$recGeneLayout
+  list(
+    spNodes = spLayout$nodes,
+    spEdges = spLayout$edges,
+    recGeneNodes = recGeneLayout$nodes,
+    recGeneEdges = recGeneLayout$edges
+  )
+}

@@ -57,7 +57,7 @@ get_gene_tree_edges <- function(glist, parent = NULL) {
     item <- data.frame(
       name = glist$name,
       group = glist$name,
-      leg = "vertical",
+      leg_type = "vertical",
       lineage = glist$lineage,
       x = c(glist$x, glist$x),
       y = c(glist$y, glist$y - 2)
@@ -67,7 +67,7 @@ get_gene_tree_edges <- function(glist, parent = NULL) {
       data.frame(
         name = glist$name,
         group = paste(glist$name, "v", sep = "_"),
-        leg = "vertical",
+        leg_type = "loss_vertical",
         lineage = glist$lineage,
         x = c(glist$x, glist$x),
         y = c(glist$y, parent$y)
@@ -75,7 +75,7 @@ get_gene_tree_edges <- function(glist, parent = NULL) {
       data.frame(
         name = glist$name,
         group = paste(glist$name, "h", sep = "_"),
-        leg = "horizontal",
+        leg_type = "loss_horizontal",
         lineage = glist$lineage,
         x = c(glist$x, parent$x),
         y = c(parent$y, parent$y)
@@ -85,7 +85,7 @@ get_gene_tree_edges <- function(glist, parent = NULL) {
     item <- data.frame(
       name = glist$name,
       group = glist$name,
-      leg = "transfer",
+      leg_type = "transferBack",
       lineage = glist$lineage,
       x = c(glist$x, parent$x),
       y = c(glist$y, parent$y)
@@ -94,7 +94,7 @@ get_gene_tree_edges <- function(glist, parent = NULL) {
     item <- data.frame(
       name = glist$name,
       group = glist$name,
-      leg = "elbow",
+      leg_type = "elbow",
       lineage = glist$lineage,
       x = c(glist$x, glist$x, parent$x),
       y = c(glist$y, parent$y, parent$y)
@@ -103,7 +103,7 @@ get_gene_tree_edges <- function(glist, parent = NULL) {
     item <- data.frame(
       name = glist$name,
       group = glist$name,
-      leg = "elbow",
+      leg_type = "elbow",
       lineage = glist$lineage,
       x = c(parent$x, glist$x, glist$x),
       y = c(parent$y, parent$y, glist$y)
