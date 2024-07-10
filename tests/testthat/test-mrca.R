@@ -1,8 +1,9 @@
 test_that("the mrca() function works", {
-  ex <- RecPhylo$new(recphylo_example("example_1.recphyloxml"), use_branch_length = 10)
-  expect_equal(mrca(ex$spList, c("A")), "A")
-  expect_equal(mrca(ex$spList, c("D", "C")), "CD")
-  expect_equal(mrca(ex$spList, c("D", "B")), "BCD")
-  expect_equal(mrca(ex$spList, c("D", "A")), "ABCD")
-  expect_true(is.na(mrca(ex$spList, c("D", "E"))))
+  ex <- example_recPhyloXML()
+  ex_clade <- ex$spTree$clade
+  expect_equal(find_mrca_clade(ex_clade, c("A"))$name, "A")
+  expect_equal(find_mrca_clade(ex_clade, c("D", "C"))$name, "CD")
+  expect_equal(find_mrca_clade(ex_clade, c("D", "B"))$name, "BCD")
+  expect_equal(find_mrca_clade(ex_clade, c("D", "A"))$name, "ABCD")
+  expect_true(is.na(find_mrca_clade(ex$spList, c("D", "E"))))
 })
