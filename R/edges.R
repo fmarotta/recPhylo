@@ -114,22 +114,53 @@ get_gene_tree_edges <- function(glist, parent = NULL) {
   Reduce(rbind, c(list(item), lapply(glist$children, get_gene_tree_edges, glist)))
 }
 
-get_simple_phylogeny_edges <- function(cl, parent = NULL) {
+get_phylogeny_edges_comb <- function(cl, parent = NULL) {
+  item <- data.frame(
+    name = cl$name,
+    group = cl$name,
+    leg = "vertical",
+    x = cl$x,
+    xend = cl$x,
+    y = cl$y - cl$branch_length,
+    yend = cl$y
+  )
+  if (length(cl$children) == 0) {
+    return(item)
+  }
+  children_range <- range(sapply(cl$children, `[[`, "x"))
+  rbind(
+    item,
+    data.frame(
+      name = cl$name,
+      group = paste(cl$name, "brace", sep = "@"),
+      leg = "horizontal",
+      x = children_range[1],
+      xend = children_range[2],
+      y = cl$y,
+      yend = cl$y
+    ),
+    Reduce(rbind, lapply(cl$children, get_phylogeny_edges_comb, cl))
+  )
+}
+
+get_phylogeny_edges_link <- function(cl, parent = NULL) {
   item <- if (is.null(parent)) {
     data.frame(
       name = cl$name,
       group = cl$name,
-      leg = "vertical",
-      x = c(cl$x, cl$x),
-      y = c(cl$y - cl$branch_length, cl$y)
+      x = cl$x,
+      xend = cl$x,
+      y = cl$y - cl$branch_length,
+      yend = cl$y
     )
   } else {
     data.frame(
       name = cl$name,
       group = cl$name,
-      leg = "vertical",
-      x = c(cl$x, cl$x),
-      y = c(parent$y, cl$y)
+      x = parent$x,
+      xend = cl$x,
+      y = parent$y,
+      yend = cl$y
     )
   }
   if (length(cl$children) == 0) {
@@ -137,13 +168,6 @@ get_simple_phylogeny_edges <- function(cl, parent = NULL) {
   }
   rbind(
     item,
-    data.frame(
-      name = cl$name,
-      group = paste(cl$name, "brace", sep = "@"),
-      leg = "horizontal",
-      x = range(sapply(cl$children, `[[`, "x")),
-      y = c(cl$y, cl$y)
-    ),
-    Reduce(rbind, lapply(cl$children, get_simple_phylogeny_edges, cl))
+    Reduce(rbind, lapply(cl$children, get_phylogeny_edges_link, cl))
   )
 }
