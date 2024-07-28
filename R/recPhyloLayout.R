@@ -11,7 +11,7 @@ RecPhyloLayout <- R6::R6Class("RecPhyloLayout",
       private$internal_events <- sapply(species_names, function(sp) {
         lapply(recPhylo$recGeneTrees, function(rgt) {
           traverse_clades(rgt$clade, function(x) {
-            if (x$event_location == sp) {
+            if (x$event_type != "bifurcationOut" && x$event_location == sp) {
               x$event_type
             }
           })
@@ -46,9 +46,9 @@ RecPhyloLayout <- R6::R6Class("RecPhyloLayout",
         ggplot2::geom_point(data = spNodes, ggplot2::aes(x, y)) +
         ggplot2::geom_text(data = spNodes, ggplot2::aes(x, y, label = name)) +
         ggplot2::geom_point(data = geneNodes, ggplot2::aes(x, y)) +
-        ggplot2::geom_line(data = geneEdges, ggplot2::aes(x, y, group = group, color = lineage, linetype = leg_type), lineend = "round", show.legend = F) +
+        ggplot2::geom_segment(data = geneEdges, ggplot2::aes(x, y, xend = xend, yend = yend, color = lineage, linetype = paste(event_type, leg_type)), lineend = "round", show.legend = F) +
         ggplot2::geom_point(data = auxpoints, ggplot2::aes(x, y), alpha = 0) +
-        ggplot2::scale_linetype_manual(values = c("loss_vertical" = 2, "transferBack" = 3), na.value = 1) +
+        ggplot2::scale_linetype_manual(values = c("loss vertical" = 2, "bifurcationOut lateral" = 3, "transferBack lateral" = 4), na.value = 1) +
         # coord_polar() +
         # coord_flip() +
         # theme_void() +
@@ -68,7 +68,7 @@ RecPhyloLayout <- R6::R6Class("RecPhyloLayout",
       }
       list(
         nodes = merge_layout(private$.recPhylo$spTree, as.data.frame(private$layout_spTree)),
-        edges = merge_layout(private$.recPhylo$spTree, get_species_pipes_edges(private$layout_spTree))
+        edges = merge_layout(private$.recPhylo$spTree, get_spTree_edges_link(private$layout_spTree))
       )
     },
     recGeneLayout = function(value) {
@@ -85,7 +85,7 @@ RecPhyloLayout <- R6::R6Class("RecPhyloLayout",
         edges = Reduce(rbind, lapply(seq_along(private$.recPhylo$recGeneTrees), function(phylogeny_idx) {
           merge_layout(
             private$.recPhylo$recGeneTrees[[phylogeny_idx]],
-            get_gene_tree_edges(private$layout_recGeneTrees[[phylogeny_idx]])
+            get_recGene_edges(private$layout_recGeneTrees[[phylogeny_idx]])
           )
         }))
       )
@@ -148,7 +148,7 @@ RecPhyloLayout <- R6::R6Class("RecPhyloLayout",
       if (length(children) == 0) {
         is_leaf <- TRUE
         x <- private$max_x + half_x_thickness
-        private$max_x <<- x + half_x_thickness + private$config$x_padding
+        private$max_x <- x + half_x_thickness + private$config$x_padding
       } else {
         is_leaf <- FALSE
         x <- (children[[1]]$x + children[[1]]$half_x_thickness + children[[length(children)]]$x - children[[length(children)]]$half_x_thickness) / 2
@@ -177,7 +177,7 @@ RecPhyloLayout <- R6::R6Class("RecPhyloLayout",
       l <- list(
         name = clade$name,
         child_idx = child_idx,
-        side = "root",
+        side = "root", # will be updated by the parent
         is_leaf = is_leaf,
         x = x,
         y = y,
@@ -227,11 +227,22 @@ RecPhyloLayout <- R6::R6Class("RecPhyloLayout",
       # * If it's a transfer and we are in the same species, same as duplication.
       # * If it's a loss, we increment the x-coord of both internal and branch levels, we increment the y of the branch level.
       inner_layout <- private$inner_layout[[clade$event_location]]
-      x <- inner_layout$inner_x
+      x <- if (clade$event_type == "bifurcationOut") {
+        external_species_x <- private$max_x + 1
+        private$max_x <- external_species_x + 1 + private$config$x_padding
+        external_species_x
+      } else if (clade$event_type == "duplication") {
+        # XXX: use inner_layout$inner_x to revert to the previous, "uncentered" parent node
+        inner_layout$inner_x + (inner_layout$side == "left") - 0.5
+      } else {
+        inner_layout$inner_x
+      }
       y <- if (clade$event_type %in% c("speciation", "leaf")) {
-        y <- inner_layout$inner_y
+        inner_layout$inner_y
       } else if (clade$event_type %in% c("duplication", "branchingOut", "transferBack", "loss")) {
-        y <- inner_layout$inner_h
+        inner_layout$inner_h
+      } else if (clade$event_type == "bifurcationOut") {
+        0
       } else {
         stop("Unsupported event type.")
       }
@@ -244,12 +255,7 @@ RecPhyloLayout <- R6::R6Class("RecPhyloLayout",
       if (clade$event_type %in% c("duplication", "branchingOut", "transferBack", "loss")) {
         private$inner_layout[[clade$event_location]]$inner_h <- inner_layout$inner_h + inner_layout$branch_height_fraction
       }
-      children_permutation <- if (is.null(private$permutations_recGeneTree[[clade$name]])) {
-        seq_along(clade$clade)
-      } else {
-        private$permutations_recGeneTree[[clade$name]]
-      }
-      children <- lapply(children_permutation, function(child_idx) {
+      children <- lapply(seq_along(clade$clade), function(child_idx) {
         new_lineage <- if (clade$event_type != "duplication") {
           lineage
         } else if (child_idx == 1) {

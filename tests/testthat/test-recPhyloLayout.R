@@ -86,3 +86,24 @@ test_that("the plots without `y_shift` look fine", {
     )$testplot()
   )
 })
+
+skip_if_not_installed("vdiffr")
+test_that("bifurcationOut is rendered correctly", {
+  ex_file <- system.file(
+    "extdata",
+    "recphylo_example_2.xml",
+    package = "recPhylo",
+    mustWork = TRUE
+  )
+  ex <- read_recPhyloXML(ex_file) |> flip_sp_children("13")
+  vdiffr::expect_doppelganger(
+    "scale = 5, padding = 3, y_shift = T, branch_length = T",
+    RecPhyloLayout$new(ex,
+      branch_length_scale = 5,
+      x_padding = 3,
+      use_y_shift = T,
+      use_branch_length = T
+    )$testplot()
+  )
+})
+

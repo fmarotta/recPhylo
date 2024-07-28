@@ -1,6 +1,6 @@
 # TODO: have these functions return a list of phyloXML_layout class
 
-get_species_pipes_edges <- function(splist) {
+get_spTree_edges_link <- function(splist, parent = NULL) {
   item <- if (splist$is_leaf) {
     data.frame(
       name = splist$name,
@@ -48,70 +48,75 @@ get_species_pipes_edges <- function(splist) {
       )
     )
   }
-  Reduce(rbind, c(list(item), lapply(splist$children, get_species_pipes_edges)))
+  Reduce(rbind, c(list(item), lapply(splist$children, get_spTree_edges_link)))
 }
 
-get_gene_tree_edges <- function(glist, parent = NULL) {
-  # each node is responsible to connect with its parent.
-  if (is.null(parent)) {
-    item <- data.frame(
+get_recGene_edge_root <- function(glist, branch_length = 2) {
+  data.frame(
+    name = glist$name,
+    group = glist$name,
+    leg_type = "vertical",
+    lineage = glist$lineage,
+    x = glist$x,
+    xend = glist$x,
+    y = glist$y - branch_length,
+    yend = glist$y
+  )
+}
+
+get_recGene_edge_elbow <- function(glist, parent) {
+  rbind(
+    data.frame(
       name = glist$name,
-      group = glist$name,
+      group = paste(glist$name, "h", sep = "_"),
+      leg_type = "horizontal",
+      lineage = glist$lineage,
+      x =  parent$x,
+      xend = glist$x,
+      y = parent$y,
+      yend = parent$y
+    ),
+    data.frame(
+      name = glist$name,
+      group = paste(glist$name, "v", sep = "_"),
       leg_type = "vertical",
       lineage = glist$lineage,
-      x = c(glist$x, glist$x),
-      y = c(glist$y, glist$y - 2)
+      x = glist$x,
+      xend = glist$x,
+      y = parent$y,
+      yend = glist$y
     )
-  } else if (glist$layout_event == "loss") {
-    item <- rbind(
-      data.frame(
-        name = glist$name,
-        group = paste(glist$name, "v", sep = "_"),
-        leg_type = "loss_vertical",
-        lineage = glist$lineage,
-        x = c(glist$x, glist$x),
-        y = c(glist$y, parent$y)
-      ),
-      data.frame(
-        name = glist$name,
-        group = paste(glist$name, "h", sep = "_"),
-        leg_type = "loss_horizontal",
-        lineage = glist$lineage,
-        x = c(glist$x, parent$x),
-        y = c(parent$y, parent$y)
-      )
-    )
+  )
+}
+
+get_recGene_edge_link <- function(glist, parent) {
+  data.frame(
+    name = glist$name,
+    group = paste(glist$name, "l", sep = "_"),
+    leg_type = "lateral",
+    lineage = glist$lineage,
+    x =  parent$x,
+    xend = glist$x,
+    y = parent$y,
+    yend = glist$y
+  )
+}
+
+get_recGene_edges <- function(glist, parent = NULL) {
+  # each node is responsible to connect with its parent.
+  item <- if (is.null(parent)) {
+    get_recGene_edge_root(glist)
   } else if (glist$layout_event == "transferBack") {
-    item <- data.frame(
-      name = glist$name,
-      group = glist$name,
-      leg_type = "transferBack",
-      lineage = glist$lineage,
-      x = c(glist$x, parent$x),
-      y = c(glist$y, parent$y)
-    )
-  } else if (parent$x >= glist$x) {
-    item <- data.frame(
-      name = glist$name,
-      group = glist$name,
-      leg_type = "elbow",
-      lineage = glist$lineage,
-      x = c(glist$x, glist$x, parent$x),
-      y = c(glist$y, parent$y, parent$y)
-    )
-  } else if (parent$x < glist$x) {
-    item <- data.frame(
-      name = glist$name,
-      group = glist$name,
-      leg_type = "elbow",
-      lineage = glist$lineage,
-      x = c(parent$x, glist$x, glist$x),
-      y = c(parent$y, parent$y, glist$y)
-    )
+    get_recGene_edge_link(glist, parent)
+  } else if (glist$layout_event == "bifurcationOut") {
+    get_recGene_edge_link(glist, parent)
   } else {
-    stop("Unexpected node type: ", glist)
+    get_recGene_edge_elbow(glist, parent)
   }
-  Reduce(rbind, c(list(item), lapply(glist$children, get_gene_tree_edges, glist)))
+  Reduce(rbind, c(
+    list(item),
+    lapply(glist$children, get_recGene_edges, glist)
+  ))
 }
 
 get_phylogeny_edges_comb <- function(cl, parent = NULL) {

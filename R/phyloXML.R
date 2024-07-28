@@ -179,7 +179,7 @@ parse_spTree_clade <- function(clade_xml) {
 
 parse_recGeneTree_clade <- function(clade_xml) {
   clade <- parse_clade(clade_xml)
-  event_xml <- xml2::xml_find_first(clade_xml, "./eventsRec/*[self::leaf or self::duplication or self::loss or self::branchingOut or self::speciation]")
+  event_xml <- xml2::xml_find_first(clade_xml, "./eventsRec/*[self::leaf or self::duplication or self::loss or self::branchingOut or self::speciation or self::bifurcationOut]")
   clade$event_type <- xml2::xml_name(event_xml)
   clade$event_location <- xml2::xml_attr(event_xml, "speciesLocation")
   # clade$geography <- ... TODO
