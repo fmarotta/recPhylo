@@ -68,7 +68,7 @@ RecPhyloLayout <- R6::R6Class("RecPhyloLayout",
       }
       list(
         nodes = merge_layout(private$.recPhylo$spTree, as.data.frame(private$layout_spTree)),
-        edges = merge_layout(private$.recPhylo$spTree, get_spTree_edges_link(private$layout_spTree))
+        edges = merge_layout(private$.recPhylo$spTree, get_spTree_edges(private$layout_spTree))
       )
     },
     recGeneLayout = function(value) {

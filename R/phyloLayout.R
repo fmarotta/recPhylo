@@ -45,7 +45,7 @@ PhylogenyLayout <- R6::R6Class("PhylogenyLayout",
       }
       list(
         nodes = merge_layout(private$.phylogeny, as.data.frame(private$layout_phylogeny)),
-        edges = merge_layout(private$.phylogeny, get_simple_phylogeny_edges(private$layout_phylogeny))
+        edges = merge_layout(private$.phylogeny, get_phylogeny_edges_link(private$layout_phylogeny))
       )
     }
   ),

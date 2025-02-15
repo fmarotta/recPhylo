@@ -51,6 +51,59 @@ get_spTree_edges_link <- function(splist, parent = NULL) {
   Reduce(rbind, c(list(item), lapply(splist$children, get_spTree_edges_link)))
 }
 
+get_spTree_edges <- function(splist, parent = NULL) {
+  if (splist$is_leaf) {
+    return(
+      data.frame(
+        name = splist$name,
+        group = splist$name,
+        x = c(splist$x - splist$half_x_thickness, splist$x - splist$half_x_thickness, splist$x + splist$half_x_thickness),
+        y = c(splist$y, splist$y, splist$y),
+        xend = c(splist$x - splist$half_x_thickness, splist$x + splist$half_x_thickness, splist$x + splist$half_x_thickness),
+        yend = c(splist$y - splist$half_y_thickness, splist$y, splist$y - splist$half_y_thickness)
+      )
+    )
+  }
+  items <- lapply(splist$children, function(child) {
+    if (child$side == "left") {
+      data.frame(
+        name = child$name,
+        group = paste(splist$name, child$name),
+        x = c(splist$x - splist$half_x_thickness, splist$x),
+        y = c(splist$y - splist$half_y_thickness, splist$y + splist$half_y_thickness),
+        xend = c(child$x - child$half_x_thickness, child$x + child$half_y_thickness),
+        yend = c(child$y - child$half_y_thickness, child$y - child$half_y_thickness)
+      )
+    } else if (child$side == "right") {
+      data.frame(
+        name = child$name,
+        group = paste(splist$name, child$name),
+        x = c(splist$x + splist$half_x_thickness, splist$x),
+        y = c(splist$y - splist$half_y_thickness, splist$y + splist$half_y_thickness),
+        xend = c(child$x + child$half_x_thickness, child$x - child$half_x_thickness),
+        yend = c(child$y - child$half_y_thickness, child$y - child$half_y_thickness)
+      )
+    }
+  })
+  if (splist$side == "root") {
+    items <- c(
+      items,
+      list(
+        data.frame(
+          name = splist$name,
+          group = splist$name,
+          x = c(splist$x - splist$half_x_thickness, splist$x + splist$half_x_thickness),
+          y = c(splist$y - splist$half_y_thickness, splist$y - splist$half_y_thickness),
+          xend = c(splist$x - splist$half_x_thickness, splist$x + splist$half_x_thickness),
+          yend = c(splist$y - splist$branch_height, splist$y - splist$branch_height)
+        )
+      )
+    )
+  }
+  Reduce(rbind, c(items, lapply(splist$children, get_spTree_edges)))
+}
+# ggplot(get_spTree_edges(splist), aes(x, y, xend = xend, yend = yend)) + geom_diagonal(orientation = "y")
+
 get_recGene_edge_root <- function(glist, branch_length = 2) {
   data.frame(
     name = glist$name,
@@ -95,14 +148,22 @@ get_recGene_edge_link <- function(glist, parent) {
     group = paste(glist$name, "l", sep = "_"),
     leg_type = "lateral",
     lineage = glist$lineage,
-    x =  parent$x,
+    x = parent$x %||% glist$x,
     xend = glist$x,
-    y = parent$y,
+    y = parent$y %||% (glist$y - 1),
     yend = glist$y
   )
 }
 
 get_recGene_edges <- function(glist, parent = NULL) {
+  item <- get_recGene_edge_link(glist, parent)
+  return(
+    Reduce(rbind, c(
+      list(item),
+      lapply(glist$children, get_recGene_edges, glist)
+    ))
+  )
+  # lol trollolol
   # each node is responsible to connect with its parent.
   item <- if (is.null(parent)) {
     get_recGene_edge_root(glist)
@@ -117,35 +178,6 @@ get_recGene_edges <- function(glist, parent = NULL) {
     list(item),
     lapply(glist$children, get_recGene_edges, glist)
   ))
-}
-
-get_phylogeny_edges_comb <- function(cl, parent = NULL) {
-  item <- data.frame(
-    name = cl$name,
-    group = cl$name,
-    leg = "vertical",
-    x = cl$x,
-    xend = cl$x,
-    y = cl$y - cl$branch_length,
-    yend = cl$y
-  )
-  if (length(cl$children) == 0) {
-    return(item)
-  }
-  children_range <- range(sapply(cl$children, `[[`, "x"))
-  rbind(
-    item,
-    data.frame(
-      name = cl$name,
-      group = paste(cl$name, "brace", sep = "@"),
-      leg = "horizontal",
-      x = children_range[1],
-      xend = children_range[2],
-      y = cl$y,
-      yend = cl$y
-    ),
-    Reduce(rbind, lapply(cl$children, get_phylogeny_edges_comb, cl))
-  )
 }
 
 get_phylogeny_edges_link <- function(cl, parent = NULL) {
