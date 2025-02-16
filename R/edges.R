@@ -71,7 +71,7 @@ get_spTree_edges <- function(splist, parent = NULL) {
         group = paste(splist$name, child$name),
         x = c(splist$x - splist$half_x_thickness, splist$x),
         y = c(splist$y - splist$half_y_thickness, splist$y + splist$half_y_thickness),
-        xend = c(child$x - child$half_x_thickness, child$x + child$half_y_thickness),
+        xend = c(child$x - child$half_x_thickness, child$x + child$half_x_thickness),
         yend = c(child$y - child$half_y_thickness, child$y - child$half_y_thickness)
       )
     } else if (child$side == "right") {

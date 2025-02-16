@@ -521,6 +521,7 @@ flip_children.phyloXML_phylogeny <- function(x, name, perm = NULL) {
   x
 }
 
+#' @export
 flip_children.phyloXML_clade <- function(x, name, perm = NULL) {
   decorate_clades(x, "clade", function(cl) {
     if (cl$name != name || length(cl$clade) <= 1) {

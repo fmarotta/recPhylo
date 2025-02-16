@@ -1,4 +1,4 @@
-GeomElbow <- ggproto("GeomElbow", GeomSegment,
+GeomElbow <- ggplot2::ggproto("GeomElbow", ggplot2::GeomSegment,
   draw_panel = function(data, panel_params, coord) {
     # Create a data frame for each part
     upper_segment <- data
@@ -15,12 +15,19 @@ GeomElbow <- ggproto("GeomElbow", GeomSegment,
   }
 )
 
+#' geom_elbow: Draw Elbow Segments
+#'
+#' `geom_elbow()` creates elbow-shaped segments connecting two points by introducing a new intermediate point at the bend of the elbow.
+#'
+#' @inherit ggplot2::geom_segment
+#'
+#' @export
 geom_elbow <- function(mapping = NULL, data = NULL, stat = "identity",
                        position = "identity", ..., arrow = NULL,
                        arrow.fill = NULL, lineend = "butt", linejoin = "round",
                        na.rm = FALSE, show.legend = NA,
                        inherit.aes = TRUE) {
-  layer(
+  ggplot2::layer(
     geom = GeomElbow, mapping = mapping, data = data, stat = stat,
     position = position, show.legend = show.legend, inherit.aes = inherit.aes,
     params = list(arrow = arrow, arrow.fill = arrow.fill, lineend = lineend, linejoin = linejoin, na.rm = na.rm, ...)
