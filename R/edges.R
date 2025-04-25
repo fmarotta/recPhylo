@@ -1,54 +1,116 @@
 # TODO: have these functions return a list of phyloXML_layout class
 
-get_spTree_edges_link <- function(splist, parent = NULL) {
+get_spTree_edges_elbow <- function(splist, parent = NULL) {
   item <- if (splist$is_leaf) {
+    # For leaf nodes, we need to convert the 4 points into 3 line segments
     data.frame(
-      name = splist$name,
-      group = paste(splist$name, "close"),
-      x = c(splist$x - splist$half_x_thickness, splist$x - splist$half_x_thickness, splist$x + splist$half_x_thickness, splist$x + splist$half_x_thickness),
-      y = c(splist$y - splist$half_y_thickness - splist$branch_height, splist$y, splist$y, splist$y - splist$half_y_thickness - splist$branch_height)
+      name = rep(splist$name, 3),
+      group = rep(paste(splist$name, "close"), 3),
+      x = c(
+        splist$x - splist$half_x_thickness,                  # Point 1 to 2
+        splist$x - splist$half_x_thickness,                  # Point 2 to 3
+        splist$x + splist$half_x_thickness                   # Point 3 to 4
+      ),
+      y = c(
+        splist$y - splist$half_y_thickness - splist$branch_height,  # Point 1 to 2
+        splist$y,                                            # Point 2 to 3
+        splist$y                                             # Point 3 to 4
+      ),
+      xend = c(
+        splist$x - splist$half_x_thickness,                  # Point 1 to 2
+        splist$x + splist$half_x_thickness,                  # Point 2 to 3
+        splist$x + splist$half_x_thickness                   # Point 3 to 4
+      ),
+      yend = c(
+        splist$y,                                            # Point 1 to 2
+        splist$y,                                            # Point 2 to 3
+        splist$y - splist$half_y_thickness - splist$branch_height # Point 3 to 4
+      )
     )
   } else {
     rbind(
+      # Inner left segment (2 points = 1 segment)
       data.frame(
         name = splist$name,
         group = paste(splist$name, "inl"),
-        x = c(splist$children[[1]]$x + splist$children[[1]]$half_x_thickness, splist$x),
-        y = splist$y + splist$half_y_thickness + splist$y_shift
+        x = splist$children[[1]]$x + splist$children[[1]]$half_x_thickness,
+        y = splist$y + splist$half_y_thickness + splist$y_shift,
+        xend = splist$x,
+        yend = splist$y + splist$half_y_thickness + splist$y_shift
       ),
+      # Inner right segment (2 points = 1 segment)
       data.frame(
         name = splist$name,
         group = paste(splist$name, "inr"),
-        x = c(splist$x, splist$children[[length(splist$children)]]$x - splist$children[[length(splist$children)]]$half_x_thickness),
-        y = splist$y + splist$half_y_thickness + splist$y_shift
+        x = splist$x,
+        y = splist$y + splist$half_y_thickness + splist$y_shift,
+        xend = splist$children[[length(splist$children)]]$x - splist$children[[length(splist$children)]]$half_x_thickness,
+        yend = splist$y + splist$half_y_thickness + splist$y_shift
       ),
+      # Outer left segment (3 points = 2 segments)
       data.frame(
-        name = splist$name,
-        group = paste(splist$name, "outl"),
-        x = c(splist$children[[1]]$x - splist$children[[1]]$half_x_thickness, splist$children[[1]]$x - splist$children[[1]]$half_x_thickness, splist$x - splist$half_x_thickness),
-        y = c(splist$y + splist$half_y_thickness + splist$y_shift, splist$y - splist$half_y_thickness + splist$y_shift, splist$y - splist$half_y_thickness + splist$y_shift)
+        name = rep(splist$name, 2),
+        group = rep(paste(splist$name, "outl"), 2),
+        x = c(
+          splist$children[[1]]$x - splist$children[[1]]$half_x_thickness,  # Point 1 to 2
+          splist$children[[1]]$x - splist$children[[1]]$half_x_thickness   # Point 2 to 3
+        ),
+        y = c(
+          splist$y + splist$half_y_thickness + splist$y_shift,             # Point 1 to 2
+          splist$y - splist$half_y_thickness + splist$y_shift              # Point 2 to 3
+        ),
+        xend = c(
+          splist$children[[1]]$x - splist$children[[1]]$half_x_thickness,  # Point 1 to 2
+          splist$x - splist$half_x_thickness                               # Point 2 to 3
+        ),
+        yend = c(
+          splist$y - splist$half_y_thickness + splist$y_shift,             # Point 1 to 2
+          splist$y - splist$half_y_thickness + splist$y_shift              # Point 2 to 3
+        )
       ),
+      # Outer right segment (3 points = 2 segments)
       data.frame(
-        name = splist$name,
-        group = paste(splist$name, "outr"),
-        x = c(splist$x + splist$half_x_thickness, splist$children[[length(splist$children)]]$x + splist$children[[length(splist$children)]]$half_x_thickness, splist$children[[length(splist$children)]]$x + splist$children[[length(splist$children)]]$half_x_thickness),
-        y = c(splist$y - splist$half_y_thickness + splist$y_shift, splist$y - splist$half_y_thickness + splist$y_shift, splist$y + splist$half_y_thickness + splist$y_shift)
+        name = rep(splist$name, 2),
+        group = rep(paste(splist$name, "outr"), 2),
+        x = c(
+          splist$x + splist$half_x_thickness,                              # Point 1 to 2
+          splist$children[[length(splist$children)]]$x + splist$children[[length(splist$children)]]$half_x_thickness  # Point 2 to 3
+        ),
+        y = c(
+          splist$y - splist$half_y_thickness + splist$y_shift,             # Point 1 to 2
+          splist$y - splist$half_y_thickness + splist$y_shift              # Point 2 to 3
+        ),
+        xend = c(
+          splist$children[[length(splist$children)]]$x + splist$children[[length(splist$children)]]$half_x_thickness, # Point 1 to 2
+          splist$children[[length(splist$children)]]$x + splist$children[[length(splist$children)]]$half_x_thickness  # Point 2 to 3
+        ),
+        yend = c(
+          splist$y - splist$half_y_thickness + splist$y_shift,             # Point 1 to 2
+          splist$y + splist$half_y_thickness + splist$y_shift              # Point 2 to 3
+        )
       ),
+      # Left stem segment (2 points = 1 segment)
       data.frame(
         name = splist$name,
         group = paste(splist$name, "steml"),
-        x = c(splist$x - splist$half_x_thickness, splist$x - splist$half_x_thickness),
-        y = c(splist$y - splist$half_y_thickness - splist$branch_height, splist$y - splist$half_y_thickness)
+        x = splist$x - splist$half_x_thickness,
+        y = splist$y - splist$half_y_thickness - splist$branch_height,
+        xend = splist$x - splist$half_x_thickness,
+        yend = splist$y - splist$half_y_thickness
       ),
+      # Right stem segment (2 points = 1 segment)
       data.frame(
         name = splist$name,
         group = paste(splist$name, "stemr"),
-        x = c(splist$x + splist$half_x_thickness, splist$x + splist$half_x_thickness),
-        y = c(splist$y - splist$half_y_thickness, splist$y - splist$half_y_thickness - splist$branch_height)
+        x = splist$x + splist$half_x_thickness,
+        y = splist$y - splist$half_y_thickness,
+        xend = splist$x + splist$half_x_thickness,
+        yend = splist$y - splist$half_y_thickness - splist$branch_height
       )
     )
   }
-  Reduce(rbind, c(list(item), lapply(splist$children, get_spTree_edges_link)))
+  # Recursively process child nodes and combine results
+  Reduce(rbind, c(list(item), lapply(splist$children, get_spTree_edges_elbow)))
 }
 
 get_recGene_edge_root <- function(glist, branch_length = 2) {
