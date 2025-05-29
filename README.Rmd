@@ -59,8 +59,10 @@ recphylo_xml <- read_recPhyloXML(recphylo_file)
 recphylo_layout <- layout_recphylo(recphylo_xml, branch_length_scale = 5)
 
 ggplot() +
-  geom_line(data = recphylo_layout$spEdges, aes(x, y, group = group)) +
-  geom_line(data = recphylo_layout$recGeneEdges, aes(x, y, group = group, color = lineage, linetype = leg_type), show.legend = F) +
+  geom_diagonal(data = recphylo_layout$spEdges, aes(x, y, xend = xend, yend = yend), orientation = "y") +
+  geom_point(data = recphylo_layout$recGeneEdges, aes(xend, yend)) +
+  geom_text(data = recphylo_layout$recGeneEdges, aes(xend, yend, label = name)) +
+  geom_segment(data = recphylo_layout$recGeneEdges, aes(x, y, xend = xend, yend = yend, color = lineage, linetype = leg_type), show.legend = F, orientation = "x") +
   scale_linetype_manual(values = c("loss_vertical" = 2, "transferBack" = 3), na.value = 1) +
   theme_void() +
   NULL
@@ -90,7 +92,7 @@ ggplot() +
   NULL
 
 ggplot() +
-  geom_diagonal(data = phylo_layout$edges, aes(x, y, xend = xend, yend = yend, group = group, color = is_bacterium), orientation = "y") +
+  ggforce::geom_diagonal(data = phylo_layout$edges, aes(x, y, xend = xend, yend = yend, group = group, color = is_bacterium), orientation = "y") +
   theme_void() +
   NULL
 

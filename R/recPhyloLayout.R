@@ -217,7 +217,8 @@ RecPhyloLayout <- R6::R6Class("RecPhyloLayout",
         sp_x = splist$x,
         sp_y = splist$y,
         inner_x2 = splist$x - splist$half_x_thickness + 1,
-        slope = atan2(parent$y - splist$y, parent$x - splist$x)
+        inner_y2 = splist$y - splist$half_y_thickness + splist$y_shift + 0.5,
+        slope = atan2((splist$y - splist$half_y_thickness + splist$y_shift) - (parent$y - parent$half_y_thickness + parent$y_shift), splist$x - parent$x)
       )
       lapply(splist$children, private$inner_species_pipes_layout, splist)
       invisible(NULL)
@@ -298,13 +299,13 @@ RecPhyloLayout <- R6::R6Class("RecPhyloLayout",
       } else if (clade$event_type %in% c("duplication", "branchingOut", "transferBack", "loss")) {
         # XXX: use inner_layout$inner_x to revert to the previous, "uncentered" parent node
         # inner_layout$inner_x + (inner_layout$side == "left") - 0.5
-        inner_layout$inner_x2 + (inner_layout$sp_y - inner_layout$inner_h) * cos(inner_layout$slope)
+        inner_layout$inner_x2 - (inner_layout$inner_y2 - inner_layout$inner_h) * cos(inner_layout$slope)
         # inner_layout$inner_x2
       } else {
         inner_layout$inner_x2
       }
       y <- if (clade$event_type %in% c("speciation", "leaf")) {
-        inner_layout$sp_y
+        inner_layout$inner_y2
       } else if (clade$event_type %in% c("duplication", "branchingOut", "transferBack", "loss")) {
         inner_layout$inner_h
       } else if (clade$event_type == "bifurcationOut") {
@@ -316,6 +317,7 @@ RecPhyloLayout <- R6::R6Class("RecPhyloLayout",
         private$inner_layout[[clade$event_location]]$inner_x2 <- inner_layout$inner_x2 + 1
       }
       if (clade$event_type == "speciation") {
+        # never used in _layout2
         private$inner_layout[[clade$event_location]]$inner_y <- inner_layout$inner_y + 1
       }
       if (clade$event_type %in% c("duplication", "branchingOut", "transferBack", "loss")) {
