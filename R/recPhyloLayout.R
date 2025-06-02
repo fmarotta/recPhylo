@@ -304,8 +304,10 @@ RecPhyloLayout <- R6::R6Class("RecPhyloLayout",
       } else {
         inner_layout$inner_x2
       }
-      y <- if (clade$event_type %in% c("speciation", "leaf")) {
+      y <- if (clade$event_type == "speciation") {
         inner_layout$inner_y2
+      } else if (clade$event_type == "leaf") {
+        inner_layout$sp_y
       } else if (clade$event_type %in% c("duplication", "branchingOut", "transferBack", "loss")) {
         inner_layout$inner_h
       } else if (clade$event_type == "bifurcationOut") {
