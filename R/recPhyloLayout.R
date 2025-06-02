@@ -25,7 +25,7 @@ RecPhyloLayout <- R6::R6Class("RecPhyloLayout",
       private$layout_spTree <- private$species_pipes_layout(private$.recPhylo$spTree$clade)
       private$inner_species_pipes_layout(private$layout_spTree)
       private$layout_recGeneTrees <- lapply(private$.recPhylo$recGeneTrees, function(rgt) {
-        private$gene_tree_layout(rgt$clade)
+        private$gene_tree_layout2(rgt$clade)
       })
       invisible(self)
     },
@@ -68,7 +68,7 @@ RecPhyloLayout <- R6::R6Class("RecPhyloLayout",
       }
       list(
         nodes = merge_layout(private$.recPhylo$spTree, as.data.frame(private$layout_spTree)),
-        edges = merge_layout(private$.recPhylo$spTree, get_spTree_edges_elbow(private$layout_spTree))
+        edges = merge_layout(private$.recPhylo$spTree, get_spTree_edges(private$layout_spTree))
       )
     },
     recGeneLayout = function(value) {
@@ -190,7 +190,7 @@ RecPhyloLayout <- R6::R6Class("RecPhyloLayout",
       class(l) <- c("phyloXML_layout", class(l))
       l
     },
-    inner_species_pipes_layout = function(splist) {
+    inner_species_pipes_layout = function(splist, parent = NULL) {
       if (isTRUE(private$warnings$negative_branch_height) && splist$branch_height + splist$y_shift < 0) {
         warning("Negative branch heights: the tree will be gibberish. Please increase `branch_length_scale`.", call. = FALSE)
         private$warnings$negative_branch_height <- FALSE
@@ -208,14 +208,19 @@ RecPhyloLayout <- R6::R6Class("RecPhyloLayout",
       } else {
         splist$y - splist$half_y_thickness + splist$y_shift + 1
       }
-      private$inner_layout[[splist$name]] = list(
+      private$inner_layout[[splist$name]] <- list(
         side = splist$side,
         branch_height_fraction = branch_height_fraction,
         inner_h = inner_h,
         inner_x = inner_x,
-        inner_y = inner_y
+        inner_y = inner_y,
+        sp_x = splist$x,
+        sp_y = splist$y,
+        inner_x2 = splist$x - splist$half_x_thickness + 1,
+        inner_y2 = splist$y - splist$half_y_thickness + splist$y_shift + 0.5,
+        slope = atan2((splist$y - splist$half_y_thickness + splist$y_shift) - (parent$y - parent$half_y_thickness + parent$y_shift), splist$x - parent$x)
       )
-      lapply(splist$children, private$inner_species_pipes_layout)
+      lapply(splist$children, private$inner_species_pipes_layout, splist)
       invisible(NULL)
     },
     gene_tree_layout = function(clade, child_idx = 0, lineage = "0") {
@@ -264,6 +269,71 @@ RecPhyloLayout <- R6::R6Class("RecPhyloLayout",
           paste(lineage, clade$name, sep = ":-:")
         }
         private$gene_tree_layout(clade$clade[[child_idx]], child_idx, new_lineage)
+      })
+      l <- list(
+        name = clade$name,
+        child_idx = child_idx,
+        lineage = lineage,
+        is_leaf = clade$event_type == "leaf",
+        x = x,
+        y = y,
+        layout_event = clade$event_type,
+        children = children
+      )
+      class(l) <- c("phyloXML_layout", class(l))
+      l
+    },
+    gene_tree_layout2 = function(clade, child_idx = 0, lineage = "0") {
+      # * Depth first is the only way to preserve the order. If a branch was at the top in one species node, it must be at the top in the descendant species as well. So it's also pre-order: we visit the node itself first, then the left child, then the right child.
+      # * If it's a speciation, we put it in the first (most external) available x-y coord IN THE INTERNAL LEVEL (not in the branch height level). Then we increment x and y for the internal level, and we increment x for the branch height level.
+      # * If it's a duplication, we put it in the first available x-y coord in the branch-height level, then we increment x and y for the branch height level, we don't touch the internal level, so the next event will fall exactly in place.
+      # * If it's a leaf, we put it in the first availalbe x coord (y is same as the species leaf), and increment x-coord. we also increment x-coord in the branch-height level.
+      # * so every time we increment the x-coord for the internal level, we do so for the branch too.
+      # * If it's a transfer and we are in the same species, same as duplication.
+      # * If it's a loss, we increment the x-coord of both internal and branch levels, we increment the y of the branch level.
+      inner_layout <- private$inner_layout[[clade$event_location]]
+      x <- if (clade$event_type == "bifurcationOut") {
+        external_species_x <- private$max_x + 1
+        private$max_x <- external_species_x + 1 + private$config$x_padding
+        external_species_x
+      } else if (clade$event_type %in% c("duplication", "branchingOut", "transferBack", "loss")) {
+        # XXX: use inner_layout$inner_x to revert to the previous, "uncentered" parent node
+        # inner_layout$inner_x + (inner_layout$side == "left") - 0.5
+        inner_layout$inner_x2 - (inner_layout$inner_y2 - inner_layout$inner_h) * cos(inner_layout$slope)
+        # inner_layout$inner_x2
+      } else {
+        inner_layout$inner_x2
+      }
+      y <- if (clade$event_type == "speciation") {
+        inner_layout$inner_y2
+      } else if (clade$event_type == "leaf") {
+        inner_layout$sp_y
+      } else if (clade$event_type %in% c("duplication", "branchingOut", "transferBack", "loss")) {
+        inner_layout$inner_h
+      } else if (clade$event_type == "bifurcationOut") {
+        0
+      } else {
+        stop("Unsupported event type.")
+      }
+      if (clade$event_type %in% c("speciation", "leaf", "loss")) {
+        private$inner_layout[[clade$event_location]]$inner_x2 <- inner_layout$inner_x2 + 1
+      }
+      if (clade$event_type == "speciation") {
+        # never used in _layout2
+        private$inner_layout[[clade$event_location]]$inner_y <- inner_layout$inner_y + 1
+      }
+      if (clade$event_type %in% c("duplication", "branchingOut", "transferBack", "loss")) {
+        private$inner_layout[[clade$event_location]]$inner_h <- inner_layout$inner_h + inner_layout$branch_height_fraction
+      }
+      children <- lapply(seq_along(clade$clade), function(child_idx) {
+        new_lineage <- if (clade$event_type != "duplication") {
+          lineage
+        } else if (child_idx == 1) {
+          lineage
+        } else {
+          paste(lineage, clade$name, sep = ":-:")
+        }
+        private$gene_tree_layout2(clade$clade[[child_idx]], child_idx, new_lineage)
       })
       l <- list(
         name = clade$name,

@@ -53,14 +53,17 @@ This is a basic example which shows you how to plot a reconciliated phylogenetic
 
 library(recPhylo)
 library(ggplot2)
+library(ggforce)
 
 recphylo_file <- system.file("extdata", "recphylo_example_1.xml", package = "recPhylo")
 recphylo_xml <- read_recPhyloXML(recphylo_file)
 recphylo_layout <- layout_recphylo(recphylo_xml, branch_length_scale = 5)
 
 ggplot() +
-  geom_line(data = recphylo_layout$spEdges, aes(x, y, group = group)) +
-  geom_line(data = recphylo_layout$recGeneEdges, aes(x, y, group = group, color = lineage, linetype = leg_type), show.legend = F) +
+  geom_diagonal(data = recphylo_layout$spEdges, aes(x, y, xend = xend, yend = yend), orientation = "y") +
+  geom_point(data = recphylo_layout$recGeneEdges, aes(xend, yend)) +
+  geom_text(data = recphylo_layout$recGeneEdges, aes(xend, yend, label = name)) +
+  geom_segment(data = recphylo_layout$recGeneEdges, aes(x, y, xend = xend, yend = yend, color = lineage, linetype = leg_type), show.legend = F, orientation = "x") +
   scale_linetype_manual(values = c("loss_vertical" = 2, "transferBack" = 3), na.value = 1) +
   theme_void() +
   NULL
@@ -85,8 +88,96 @@ phylo_xml <- add_annot(phylo_xml, data.frame(
 phylo_layout <- layout_phylogeny(phylo_xml, branch_length_scale = 5)
 
 ggplot() +
-  geom_line(data = phylo_layout$edges, aes(x, y, group = group, color = is_bacterium)) +
+  geom_segment(data = phylo_layout$edges, aes(x, y, xend = xend, yend = yend, group = group, color = is_bacterium)) +
   theme_void() +
+  NULL
+
+ggplot() +
+  ggforce::geom_diagonal(data = phylo_layout$edges, aes(x, y, xend = xend, yend = yend, group = group, color = is_bacterium), orientation = "y") +
+  theme_void() +
+  NULL
+
+ggplot() +
+  geom_elbow(data = phylo_layout$edges, aes(x, y, xend = xend, yend = yend, group = group, color = is_bacterium)) +
+  theme_void() +
+  NULL
+
+```
+
+```{r}
+
+recphylo_file <- system.file("extdata", "recphylo_example_2.xml", package = "recPhylo")
+recphylo_xml <- read_recPhyloXML(recphylo_file) |>
+  flip_sp_children("13")
+
+load_all()
+l <- RecPhyloLayout$new(recphylo_xml, branch_length_scale = 5, use_branch_length = FALSE)
+spEdges <- l$spLayout$edges
+geneNodes <- l$recGeneLayout$nodes
+geneEdges <- l$recGeneLayout$edges
+
+p <- ggplot() +
+  geom_diagonal(data = spEdges, aes(x, y, xend = xend, yend = yend), lineend = "round", orientation = "y") +
+  geom_text(data = geneNodes, aes(x, y, label = name)) +
+  geom_elbow(data = geneEdges, aes(x, y, xend = xend, yend = yend, color = lineage, linetype = paste(event_type, leg_type, sep = "_")), lineend = "round", show.legend = F, orientation = "y") +
+  scale_linetype_manual(values = c("loss_vertical" = 2, "transferBack_lateral" = 4, "bifurcationOut_lateral" = 3), na.value = 1) +
+  # scale_y_reverse() +
+  # coord_radial() +
+  # coord_flip() +
+  # theme_void() +
+  NULL
+p
+ggsave("/tmp/plot.png")
+
+
+p <- ggplot() +
+  geom_segment(data = spEdges, aes(x, y, xend = xend, yend = yend), lineend = "round", orientation = "y") +
+  geom_text(data = geneNodes, aes(x, y, label = name)) +
+  geom_segment(data = geneEdges, aes(x, y, xend = xend, yend = yend, color = lineage, linetype = paste(event_type, leg_type, sep = "_")), lineend = "round", show.legend = F, orientation = "y") +
+  scale_linetype_manual(values = c("loss_vertical" = 2, "transferBack_lateral" = 4, "bifurcationOut_lateral" = 3), na.value = 1) +
+  # scale_y_reverse() +
+  # coord_radial() +
+  # coord_flip() +
+  # theme_void() +
+  NULL
+p
+ggsave("/tmp/plot.png")
+
+
+# This is pretty cool and new!
+p <- ggplot() +
+  geom_curve(data = spEdges[spEdges$xend >= spEdges$x, ], aes(x, y, xend = xend, yend = yend), lineend = "round", curvature = 0.3) +
+  geom_curve(data = spEdges[spEdges$xend < spEdges$x, ], aes(x, y, xend = xend, yend = yend), lineend = "round", curvature = -0.3) +
+  geom_text(data = geneNodes, aes(x, y, label = name)) +
+  geom_curve(data = geneEdges[geneEdges$xend >= geneEdges$x, ], aes(x, y, xend = xend, yend = yend, color = lineage, linetype = paste(event_type, leg_type, sep = "_")), lineend = "round", show.legend = F, curvature = 0.3) +
+  geom_curve(data = geneEdges[geneEdges$xend < geneEdges$x, ], aes(x, y, xend = xend, yend = yend, color = lineage, linetype = paste(event_type, leg_type, sep = "_")), lineend = "round", show.legend = F, curvature = -0.3) +
+  scale_linetype_manual(values = c("loss_vertical" = 2, "transferBack_lateral" = 4, "bifurcationOut_lateral" = 3), na.value = 1) +
+  # scale_y_reverse() +
+  # coord_radial() +
+  # coord_flip() +
+  # theme_void() +
+  NULL
+p
+ggsave("/tmp/plot.png")
+
+
+p <- l$testplot()
+ggsave("/tmp/plot.png")
+
+recphylo_file <- system.file("extdata", "recphylo_example_1.xml", package = "recPhylo")
+recphylo_xml <- read_recPhyloXML(recphylo_file)
+l <- RecPhyloLayout$new(recphylo_xml, branch_length_scale = 5)
+spEdges <- l$spLayout$edges
+geneNodes <- l$recGeneLayout$nodes
+geneEdges <- l$recGeneLayout$edges
+ggplot() +
+  geom_segment(data = spEdges, aes(x, y, xend = xend, yend = yend), lineend = "round", orientation = "y") +
+  # geom_text(data = geneNodes, aes(x, y, label = name)) +
+  geom_point(data = geneNodes, aes(x, y)) +
+  geom_segment(data = geneEdges, aes(x, y, xend = xend, yend = yend, color = lineage), show.legend = F, orientation = "y") +
+  # coord_polar() +
+  # coord_flip() +
+  # theme_void() +
   NULL
 
 ```
