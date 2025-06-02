@@ -94,3 +94,32 @@ get_phylogeny_edges_link <- function(cl, parent = NULL) {
     Reduce(rbind, lapply(cl$children, get_phylogeny_edges_link, cl))
   )
 }
+
+get_phylogeny_edges_comb <- function(cl, parent = NULL) {
+  item <- data.frame(
+    name = cl$name,
+    group = cl$name,
+    leg = "vertical",
+    x = cl$x,
+    xend = cl$x,
+    y = cl$y - cl$branch_length,
+    yend = cl$y
+  )
+  if (length(cl$children) == 0) {
+    return(item)
+  }
+  children_range <- range(sapply(cl$children, `[[`, "x"))
+  rbind(
+    item,
+    data.frame(
+      name = cl$name,
+      group = paste(cl$name, "brace", sep = "@"),
+      leg = "horizontal",
+      x = children_range[1],
+      xend = children_range[2],
+      y = cl$y,
+      yend = cl$y
+    ),
+    Reduce(rbind, lapply(cl$children, get_phylogeny_edges_comb, cl))
+  )
+}
