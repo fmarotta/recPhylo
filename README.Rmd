@@ -53,6 +53,7 @@ This is a basic example which shows you how to plot a reconciliated phylogenetic
 
 library(recPhylo)
 library(ggplot2)
+library(ggforce)
 
 recphylo_file <- system.file("extdata", "recphylo_example_1.xml", package = "recPhylo")
 recphylo_xml <- read_recPhyloXML(recphylo_file)
@@ -109,16 +110,50 @@ recphylo_file <- system.file("extdata", "recphylo_example_2.xml", package = "rec
 recphylo_xml <- read_recPhyloXML(recphylo_file) |>
   flip_sp_children("13")
 
-l <- RecPhyloLayout$new(recphylo_xml, branch_length_scale = 5)
+load_all()
+l <- RecPhyloLayout$new(recphylo_xml, branch_length_scale = 5, use_branch_length = FALSE)
 spEdges <- l$spLayout$edges
 geneNodes <- l$recGeneLayout$nodes
 geneEdges <- l$recGeneLayout$edges
-p <- ggplot2::ggplot() +
-  ggplot2::geom_line(data = spEdges, ggplot2::aes(x, y, group = group), lineend = "round") +
-  ggplot2::geom_text(data = geneNodes, ggplot2::aes(x, y, label = name)) +
-  geom_elbow(data = geneEdges, ggplot2::aes(x, y, xend = xend, yend = yend, color = lineage, linetype = paste(event_type, leg_type, sep = "_")), lineend = "round", show.legend = F) +
-  ggplot2::scale_linetype_manual(values = c("loss_vertical" = 2, "transferBack_lateral" = 4, "bifurcationOut_lateral" = 3), na.value = 1) +
-  # coord_polar() +
+
+p <- ggplot() +
+  geom_diagonal(data = spEdges, aes(x, y, xend = xend, yend = yend), lineend = "round", orientation = "y") +
+  geom_text(data = geneNodes, aes(x, y, label = name)) +
+  geom_elbow(data = geneEdges, aes(x, y, xend = xend, yend = yend, color = lineage, linetype = paste(event_type, leg_type, sep = "_")), lineend = "round", show.legend = F, orientation = "y") +
+  scale_linetype_manual(values = c("loss_vertical" = 2, "transferBack_lateral" = 4, "bifurcationOut_lateral" = 3), na.value = 1) +
+  # scale_y_reverse() +
+  # coord_radial() +
+  # coord_flip() +
+  # theme_void() +
+  NULL
+p
+ggsave("/tmp/plot.png")
+
+
+p <- ggplot() +
+  geom_segment(data = spEdges, aes(x, y, xend = xend, yend = yend), lineend = "round", orientation = "y") +
+  geom_text(data = geneNodes, aes(x, y, label = name)) +
+  geom_segment(data = geneEdges, aes(x, y, xend = xend, yend = yend, color = lineage, linetype = paste(event_type, leg_type, sep = "_")), lineend = "round", show.legend = F, orientation = "y") +
+  scale_linetype_manual(values = c("loss_vertical" = 2, "transferBack_lateral" = 4, "bifurcationOut_lateral" = 3), na.value = 1) +
+  # scale_y_reverse() +
+  # coord_radial() +
+  # coord_flip() +
+  # theme_void() +
+  NULL
+p
+ggsave("/tmp/plot.png")
+
+
+# This is pretty cool and new!
+p <- ggplot() +
+  geom_curve(data = spEdges[spEdges$xend >= spEdges$x, ], aes(x, y, xend = xend, yend = yend), lineend = "round", curvature = 0.3) +
+  geom_curve(data = spEdges[spEdges$xend < spEdges$x, ], aes(x, y, xend = xend, yend = yend), lineend = "round", curvature = -0.3) +
+  geom_text(data = geneNodes, aes(x, y, label = name)) +
+  geom_curve(data = geneEdges[geneEdges$xend >= geneEdges$x, ], aes(x, y, xend = xend, yend = yend, color = lineage, linetype = paste(event_type, leg_type, sep = "_")), lineend = "round", show.legend = F, curvature = 0.3) +
+  geom_curve(data = geneEdges[geneEdges$xend < geneEdges$x, ], aes(x, y, xend = xend, yend = yend, color = lineage, linetype = paste(event_type, leg_type, sep = "_")), lineend = "round", show.legend = F, curvature = -0.3) +
+  scale_linetype_manual(values = c("loss_vertical" = 2, "transferBack_lateral" = 4, "bifurcationOut_lateral" = 3), na.value = 1) +
+  # scale_y_reverse() +
+  # coord_radial() +
   # coord_flip() +
   # theme_void() +
   NULL
