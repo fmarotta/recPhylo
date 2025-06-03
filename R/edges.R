@@ -1,13 +1,12 @@
 # TODO: have these functions return a list of phyloXML_layout class
 
-# XXX Something slightly worries me: why is there no y_shift here?
 get_spTree_edges <- function(splist, parent = NULL) {
   item <- if (splist$side == "left") {
     data.frame(
       name = splist$name,
       group = paste(parent$name, splist$name),
       x = c(parent$x - parent$half_x_thickness, parent$x),
-      y = c(parent$y - parent$half_y_thickness, parent$y + parent$half_y_thickness),
+      y = c(parent$y - parent$half_y_thickness + parent$y_shift, parent$y + parent$half_y_thickness + parent$y_shift),
       xend = c(splist$x - splist$half_x_thickness, splist$x + splist$half_x_thickness),
       yend = c(splist$y - splist$half_y_thickness, splist$y - splist$half_y_thickness)
     )
@@ -16,7 +15,7 @@ get_spTree_edges <- function(splist, parent = NULL) {
       name = splist$name,
       group = paste(parent$name, splist$name),
       x = c(parent$x + parent$half_x_thickness, parent$x),
-      y = c(parent$y - parent$half_y_thickness, parent$y + parent$half_y_thickness),
+      y = c(parent$y - parent$half_y_thickness + parent$y_shift, parent$y + parent$half_y_thickness + parent$y_shift),
       xend = c(splist$x + splist$half_x_thickness, splist$x - splist$half_x_thickness),
       yend = c(splist$y - splist$half_y_thickness, splist$y - splist$half_y_thickness)
     )
@@ -25,9 +24,9 @@ get_spTree_edges <- function(splist, parent = NULL) {
       name = splist$name,
       group = splist$name,
       x = c(splist$x - splist$half_x_thickness, splist$x + splist$half_x_thickness),
-      y = c(splist$y - splist$half_y_thickness, splist$y - splist$half_y_thickness),
+      y = c(splist$y - splist$half_y_thickness + splist$y_shift, splist$y - splist$half_y_thickness + splist$y_shift),
       xend = c(splist$x - splist$half_x_thickness, splist$x + splist$half_x_thickness),
-      yend = c(splist$y - splist$branch_height, splist$y - splist$branch_height)
+      yend = c(splist$y - splist$branch_height + splist$y_shift, splist$y - splist$branch_height + splist$y_shift)
     )
   }
   if (splist$is_leaf) {

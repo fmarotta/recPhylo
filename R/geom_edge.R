@@ -9,8 +9,8 @@ GeomElbow <- ggplot2::ggproto("GeomElbow", ggplot2::GeomSegment,
 
     # Use the draw_panel method of GeomSegment
     grid::gList(
-      GeomSegment$draw_panel(upper_segment, panel_params, coord),
-      GeomSegment$draw_panel(lower_segment, panel_params, coord)
+      ggplot2::GeomSegment$draw_panel(upper_segment, panel_params, coord),
+      ggplot2::GeomSegment$draw_panel(lower_segment, panel_params, coord)
     )
   }
 )

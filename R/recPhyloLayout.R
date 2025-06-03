@@ -42,11 +42,11 @@ RecPhyloLayout <- R6::R6Class("RecPhyloLayout",
         y = c(max(spNodes$y) + private$config$branch_length_scale, private$layout_spTree$y - private$config$branch_length_scale)
       )
       ggplot2::ggplot() +
-        ggplot2::geom_line(data = spEdges, ggplot2::aes(x, y, group = group), lineend = "round") +
+        geom_elbow(data = spEdges, ggplot2::aes(x, y, xend = xend, yend = yend), lineend = "round") +
         ggplot2::geom_point(data = spNodes, ggplot2::aes(x, y)) +
         ggplot2::geom_text(data = spNodes, ggplot2::aes(x, y, label = name)) +
         ggplot2::geom_point(data = geneNodes, ggplot2::aes(x, y)) +
-        ggplot2::geom_segment(data = geneEdges, ggplot2::aes(x, y, xend = xend, yend = yend, color = lineage, linetype = paste(event_type, leg_type)), lineend = "round", show.legend = F) +
+        geom_elbow(data = geneEdges, ggplot2::aes(x, y, xend = xend, yend = yend, color = lineage, linetype = paste(event_type, leg_type)), lineend = "round", show.legend = F) +
         ggplot2::geom_point(data = auxpoints, ggplot2::aes(x, y), alpha = 0) +
         ggplot2::scale_linetype_manual(values = c("loss vertical" = 2, "bifurcationOut lateral" = 3, "transferBack lateral" = 4), na.value = 1) +
         # coord_polar() +
@@ -141,6 +141,11 @@ RecPhyloLayout <- R6::R6Class("RecPhyloLayout",
       } else {
         y_start + branch_length
       }
+      branch_height <- if (private$config$use_y_shift) {
+        max(min_branch_height, branch_length - half_y_thickness - parent_half_y_thickness)
+      } else {
+        branch_length - half_y_thickness - parent_half_y_thickness
+      }
       children <- lapply(seq_along(clade$clade), function(child_idx) {
         private$species_pipes_layout(clade$clade[[child_idx]], child_idx, y, half_y_thickness)
       })
@@ -157,7 +162,7 @@ RecPhyloLayout <- R6::R6Class("RecPhyloLayout",
         }
         if (private$config$use_y_shift) {
           y_shifts <- lapply(children, function(child) {
-            child$y - child$half_y_thickness - child$branch_height - y - half_y_thickness
+            child$y - child$half_y_thickness + child$y_shift - child$branch_height - y - half_y_thickness
           })
           y_shift <- min(c(0, unlist(y_shifts)))
           # y-shifting a parent changes the branch heights of its children
@@ -165,14 +170,10 @@ RecPhyloLayout <- R6::R6Class("RecPhyloLayout",
         }
         children <- lapply(children, function(child) {
           child$side <- if (child$x <= x) "left" else "right"
+          # We do NOT include child$y_shift here
           child$branch_height <- child$y - child$half_y_thickness - (y + half_y_thickness + y_shift)
           child
         })
-      }
-      branch_height <- if (private$config$use_y_shift) {
-        max(min_branch_height, branch_length - half_y_thickness - parent_half_y_thickness)
-      } else {
-        branch_length - half_y_thickness - parent_half_y_thickness
       }
       l <- list(
         name = clade$name,

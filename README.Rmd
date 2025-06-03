@@ -57,7 +57,7 @@ library(ggforce)
 
 recphylo_file <- system.file("extdata", "recphylo_example_1.xml", package = "recPhylo")
 recphylo_xml <- read_recPhyloXML(recphylo_file)
-recphylo_layout <- layout_recphylo(recphylo_xml, branch_length_scale = 5)
+recphylo_layout <- layout_recphylo(recphylo_xml, branch_length_scale = 3)
 
 ggplot() +
   geom_diagonal(data = recphylo_layout$spEdges, aes(x, y, xend = xend, yend = yend), orientation = "y") +
@@ -111,13 +111,13 @@ recphylo_xml <- read_recPhyloXML(recphylo_file) |>
   flip_sp_children("13")
 
 load_all()
-l <- RecPhyloLayout$new(recphylo_xml, branch_length_scale = 5, use_branch_length = FALSE)
+l <- RecPhyloLayout$new(recphylo_xml, branch_length_scale = 3, use_branch_length = FALSE)
 spEdges <- l$spLayout$edges
 geneNodes <- l$recGeneLayout$nodes
 geneEdges <- l$recGeneLayout$edges
 
 p <- ggplot() +
-  geom_diagonal(data = spEdges, aes(x, y, xend = xend, yend = yend), lineend = "round", orientation = "y") +
+  geom_elbow(data = spEdges, aes(x, y, xend = xend, yend = yend), lineend = "round", orientation = "y") +
   geom_text(data = geneNodes, aes(x, y, label = name)) +
   geom_elbow(data = geneEdges, aes(x, y, xend = xend, yend = yend, color = lineage, linetype = paste(event_type, leg_type, sep = "_")), lineend = "round", show.legend = F, orientation = "y") +
   scale_linetype_manual(values = c("loss_vertical" = 2, "transferBack_lateral" = 4, "bifurcationOut_lateral" = 3), na.value = 1) +
