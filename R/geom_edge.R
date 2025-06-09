@@ -1,5 +1,5 @@
 GeomElbow <- ggplot2::ggproto("GeomElbow", ggplot2::GeomSegment,
-  draw_panel = function(data, panel_params, coord) {
+  draw_panel = function(data, panel_params, coord, arrow = NULL, arrow.fill = NULL, lineend = "butt", linejoin = "round", na.rm = FALSE) {
     # Create a data frame for each part
     upper_segment <- data
     upper_segment$yend <- data$y
@@ -9,8 +9,8 @@ GeomElbow <- ggplot2::ggproto("GeomElbow", ggplot2::GeomSegment,
 
     # Use the draw_panel method of GeomSegment
     grid::gList(
-      ggplot2::GeomSegment$draw_panel(upper_segment, panel_params, coord),
-      ggplot2::GeomSegment$draw_panel(lower_segment, panel_params, coord)
+      ggplot2::GeomSegment$draw_panel(upper_segment, panel_params, coord, arrow = arrow, arrow.fill = arrow.fill, lineend = lineend, linejoin = linejoin, na.rm = na.rm),
+      ggplot2::GeomSegment$draw_panel(lower_segment, panel_params, coord, arrow = arrow, arrow.fill = arrow.fill, lineend = lineend, linejoin = linejoin, na.rm = na.rm)
     )
   }
 )
