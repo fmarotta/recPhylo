@@ -23,14 +23,14 @@ knitr::opts_chunk$set(
 `recPhylo` provides a way to import simple or reconciliated phylogenies into R in a way that makes it easy to plot the trees with `ggplot2`. The starting point is an XML file following either the [phyloXML](http://www.phyloxml.org/) or the [recPhyloXML format](http://phylariane.univ-lyon1.fr/recphyloxml/), which will be parsed into specific R objects. Dedicated `layout_*()` functions can convert these objects into data.frames ready to be used with ggplot.
 
 Contrary to `ggtree` or `ggraph`, with this package you don't get a plot directly from the tree object, but rather a pair of data.frames representing the computed layouts of nodes and edges.
-It is your responsibility, then, to use the appropriate ggplot geoms (typically geom_point() or geom_line()).
+It is your responsibility, then, to use the appropriate ggplot geoms (typically geom_point() or geom_segment()).
 The advantages of this approach are:
 
-* We don't need to duplicate existing geoms (e.g. we don't need to wrap geom_point() inside geom_node_point(), we can simply reuse geom_point())
-* We can make use of special geoms defined in other packages (e.g. geom_link2() from ggforce, without having to define a special geom for phylogeny objects)
-* We have better control over the layout and annotation: the x and y coordinates of all the objects are transparently saved in the layout data.frames, so it's straightforward to add custom ggplot elements corresponding to those coordinates (e.g. a tree and a multiple sequence alignment).
-* We can make use of other `ggplot2` tricks, like coord_polar(), to create new layouts "for free".
-* Should you want to use a graphics package different from `ggplot2`, you can reuse the layout computed by recPhylo.
+- We don't need to duplicate existing geoms (e.g. we don't need to wrap geom_point() inside geom_node_point(), we can simply reuse geom_point())
+- We can make use of special geoms defined in other packages (e.g. geom_link2() from ggforce, without having to define a special geom for phylogeny objects)
+- We have better control over the layout and annotation: the x and y coordinates of all the objects are transparently saved in the layout data.frames, so it's straightforward to add custom ggplot elements corresponding to those coordinates (e.g. a tree and a multiple sequence alignment).
+- We can make use of other `ggplot2` tricks, like coord_polar(), to create new layouts "for free".
+- Should you want to use a graphics package different from `ggplot2`, you can reuse the layout computed by recPhylo.
 
 This package does not have as many features as `ggtree`. Use it if you are comfortable with `ggplot2` and like to have full control over your figures.
 
@@ -43,66 +43,375 @@ You can install the development version of recPhylo from [GitHub](https://github
 devtools::install_github("fmarotta/recPhylo")
 ```
 
-## Example
+## Usage
 
-### recPhylo objects
+### phyloXML and recPhyloXML objects
 
-This is a basic example which shows you how to plot a reconciliated phylogenetic tree.
+Although the package is called recPhylo and its main purpose is to make it easier to plot reconciliated phylogenetic trees, simple phyloXML files can also be handled.
+Indeed, the recPhyloXML is an extension of phyloXML format.
+A phyloXML file contains one or more *phylogeny* tags, which specifies the phylogenetic relationships between *clades*.
+A recPhyloXML file contains exactly one *spTree* tag and zero or more *recGeneTree* tags.
+*spTree* and *recGeneTree* contain the same *phylogeny* tags that are found in phyloXML, in addition to some special tags and attributes.
+
+A phyloXML file is imported as a list of *phylogeny* objects.
+A *phylogeny* object is a list containing attributes and tags found in the phyloXML file as well as a special `clade` element which is the root of the phylogenetic tree.
+Printing a clade will show the names of all its descendants.
 
 ```{r}
 
 library(recPhylo)
+
+phylo_file <- system.file("extdata", "phylo_example_1.xml", package = "recPhylo")
+(phylo <- read_phyloXML(phylo_file))
+(phylo$clade)
+
+```
+
+A recPhyloXML file is imported as a list with two elements: `spTree` and `recGeneTrees`, the former being a *phylogeny* object and the latter being a list of *phylogeny* objects.
+
+```{r}
+
+recphylo_file <- system.file("extdata", "recphylo_example_1.xml", package = "recPhylo")
+(recphylo <- read_recPhyloXML(recphylo_file))
+(recphylo$spTree)
+(recphylo$recGeneTrees)
+# Print the root clade of the first reconciliated gene tree
+(recphylo$recGeneTrees[[1]]$clade)
+
+```
+
+#### Importing branch lengths
+
+Some software strips the branch lengths from phyloXML files.
+If you have a tree object from the ape package that contains the same clades, the branch lengths can be transferred to the phyloXML object with the function import_branch_lengths().
+Note that this function takes a phylogeny as input and returns a new phylogeny object.
+
+```{r}
+
+newick_file <- system.file("extdata", "phylo_example_1_with_lengths.newick", package = "recPhylo")
+ape_tree <- ape::read.tree(newick_file)
+phylogeny_with_lengths <- import_branch_lengths(phylo[[1]], ape_tree)
+
+```
+
+import_branch_length() can also be applied to recPhyloXML objects, in which case it acts on the spTree.
+
+#### Flipping children
+
+In a phylogenetic tree, only the topology matters, so the order in which children are stored doesn't matter.
+However, in a plot of the tree, which child is shown left and which is shown right can make a big difference on the quality of the visualization.
+This is especially true for reconciliated phylogenetic trees, where horizontal gene transfer lines get tangled with the rest of the tree.
+Thus, it is sometimes useful to be able to flip the order of the children of a clade, which can be done with the flip_children() S3 method.
+It can be applied to a phyloXML object, a phylogeny, or a clade, but it shouldn't be used for recPhyloXML objects, which have the dedicated methods flip_sp_children() and flip_recGene_children(), acting on the spTree and recGeneTrees, respectively.
+
+All these functions take the name of the parent clade as second argument.
+By default, they permute the order of child clades in lexycographic order.
+For example, for a node with three children, the initial order will be c(1, 2, 3); calling flip_children() once will give c(1, 3, 2), calling it again c(2, 1, 3), then c(2, 3, 1), c(3, 1, 2), c(3, 2, 1), and finally it will come back to c(1, 2, 3). The optional argument `perm` allows to specify a target permutation directly.
+
+```{r}
+
+print(phylo[[1]]$clade)
+flip_children(phylo[[1]]$clade, "Bacteria")
+
+```
+
+#### Adding custom annotation
+
+recPhylo allows you to attach a custom data.frame to a phyloXML or recPhyloXML object as an attribute.
+Such data.frame should have a `name` column containing the names of the clades in the phylogeny, and any number of columns with custom values.
+This feature is useful to add more data to the plot of the phylogenetic tree.
+For example, if we have data about which clades are pathogenic, we could add a data.frame with fields `name`, and `is_pathogen`.
+This would allow us to add a marker to the tree and color it differently for pathogenic and non-pathogenic species.
+The `is_pathogen` field would just be available in the data.frame that we'll use with ggplot, and it will be associated with the same $(x, y)$ coordinates of the clades, givin us the flexibility to decide how to display this information.
+See below for examples.
+For now, keep in mind that we can add annotation to phyloXML or phylogeny objects with the function add_annot().
+If applied to a phyloXML, the annotation will be added to all phylogenies in the list.
+recPhyloXML objects have dedicated methods for spTree and recGeneTrees, called add_sp_annot() and add_recGene_annot(), respectively.
+
+```{r}
+
+print(recphylo$spTree$clade)
+annot <- data.frame(
+  name = c("A", "B", "C", "D"),
+  description = c("Armadillo", "Bat", "Crane", "Dromedary")
+)
+add_sp_annot(recphylo, annot)
+
+```
+
+#### Clades API
+
+There are two utility methods for applying a function recursively to the clades: decorate_clades() and traverse_clades().
+decorate_clades() is used to add a custom attribute to each clade.
+This function takes a root clade, the name of the attribute, and a function `FUN` that computes the value for the attribute.
+The function `FUN` takes the clade as first argument; extra arguments can be passed as `...` to decorate_clades().
+For example, here is how we could add an attribute `initial` that contains only the first letter of the clade's name.
+
+```{r}
+
+new_clades <- decorate_clades(phylo[[1]]$clade, "initial", function(clade) {
+  substr(clade$name, 1, 1)
+})
+
+```
+
+traverse_clades() applies the function to all clades and returns the result as a linearized vector.
+The `.order` argument can be either "pre" or "post" and specifies whether the tree should be parsed in pre-order (clade first, then children) or post-order (children first).
+Let's use it to show the new `initial` attribute that we just added.
+
+```{r}
+
+traverse_clades(new_clades, function(clade) {
+  clade$initial
+})
+
+```
+
+Another useful method is find_mrca(), which returns the name of the most recent common ancestor for a group of clades.
+It takes a root clade and a vector of clade names.
+
+```{r}
+
+print(recphylo$recGeneTrees[[1]]$clade)
+find_mrca(recphylo$recGeneTrees[[1]]$clade, c("gene 15", "gene 7", "gene 10"))
+
+```
+
+Similarly, find_descendants() returns the descendants
+
+```{r}
+
+find_descendants(recphylo$recGeneTrees[[1]]$clade, "gene 16")
+
+```
+
+These functions are useful to get the names of the clades to be included in a data.frame for the custom annotation.
+
+### Plotting phyloXML trees
+
+Use the layout_phylogeny() function to compute the layout ($x$ and $y$ coordinates) of the tree.
+It returns a list of two data.frames called `nodes` and `edges`.
+These data.frames can be used directly with ggplot and should contain all the attributes needed to display the tree, as well as any custom attributes added with add_annot().
+Here is how to plot just the skeleton of the tree.
+
+```{r}
+
 library(ggplot2)
-library(ggforce)
+
+theme_set(theme_void())
+
+phylo_layout <- layout_phylogeny(phylo[[1]], branch_length_scale = 5)
+
+ggplot() +
+  geom_segment(data = phylo_layout$edges, aes(x, y, xend = xend, yend = yend))
+
+```
+
+We can then add node labels, which are found in the `nodes` data.frame.
+
+```{r}
+
+ggplot() +
+  geom_segment(data = phylo_layout$edges, aes(x, y, xend = xend, yend = yend)) +
+  geom_label(data = phylo_layout$nodes, aes(x, y, label = name))
+
+```
+
+Now, if you are comfortable with ggplot and its ecosystem, you are free to use different geoms to change the appearance of the tree.
+For example, here is what the edges look like with geom_diagonal() from ggforce.
+
+```{r}
+
+ggplot() +
+  ggforce::geom_diagonal(data = phylo_layout$edges, aes(x, y, xend = xend, yend = yend), orientation = "y") +
+  geom_label(data = phylo_layout$nodes, aes(x, y, label = name))
+
+```
+
+Here is how to use geom_curve() (this example also shows how we might filter edges based on their attributes).
+
+```{r}
+
+ggplot(phylo_layout$edges) +
+  geom_curve(data = \(e) e[e$side == "left", ], aes(x, y, xend = xend, yend = yend), curvature = -.5) +
+  geom_curve(data = \(e) e[e$side == "right", ], aes(x, y, xend = xend, yend = yend), curvature = .5) +
+  geom_segment(data = \(e) e[e$side == "root", ], aes(x, y, xend = xend, yend = yend)) +
+  geom_label(data = phylo_layout$nodes, aes(x, y, label = name))
+
+```
+
+This package also implements the geom_elbow() geometry, which looks like this.
+
+```{r}
+
+ggplot() +
+  geom_elbow(data = phylo_layout$edges, aes(x, y, xend = xend, yend = yend)) +
+  geom_label(data = phylo_layout$nodes, aes(x, y, label = name))
+
+```
+
+Because we can use the usual ggplot features, circular tree plots can be achieved simply by switching to polar coordinates.
+
+```{r}
+
+ggplot() +
+  geom_elbow(data = phylo_layout$edges, aes(x, y, xend = xend, yend = yend)) +
+  geom_label(data = phylo_layout$nodes, aes(x, y, label = name)) +
+  expand_limits(x = -1) +
+  coord_polar()
+
+```
+
+We can influence the tree visualization by passing some arguments to phylogeny_layout().
+There are three main variants, depending on the value of `use_branch_length`.
+
+```{r}
+
+library(patchwork)
+
+ubl_false <- layout_phylogeny(phylogeny_with_lengths, use_branch_length = FALSE)
+ubl_true <- layout_phylogeny(phylogeny_with_lengths, use_branch_length = TRUE)
+ubl_const <- layout_phylogeny(phylogeny_with_lengths, use_branch_length = 1)
+
+ubl_false_plot <- ggplot() +
+  geom_elbow(data = ubl_false$edges, aes(x, y, xend = xend, yend = yend)) +
+  labs(title = "use_branch_length = FALSE")
+
+ubl_true_plot <- ggplot() +
+  geom_elbow(data = ubl_true$edges, aes(x, y, xend = xend, yend = yend)) +
+  labs(title = "use_branch_length = TRUE")
+
+ubl_const_plot <- ggplot() +
+  geom_elbow(data = ubl_const$edges, aes(x, y, xend = xend, yend = yend)) +
+  labs(title = "use_branch_length = 1")
+
+(
+  ubl_false_plot |
+  ubl_true_plot |
+  ubl_const_plot
+) & theme(plot.title = element_text(hjust = 0.5))
+
+```
+
+- When `use_branch_legnth` is FALSE, the leaves will be aligned.
+- When `use_branch_length` is TRUE, the real branch lengths will be used.
+- When `use_branch_length` is a number, all branches will have that length.
+
+Furthermore, argument `branch_length_scale` can be set to a number and has the effect of multipling all branch lengths by that number.
+The `x_padding` argument specifies the distance between the leaves in the x direction (by default it is `1`).
+
+You might be perplexed about the orientation of the trees, since it departs from the way phylogenetic trees are usually displayed.
+That was a deliberate choice as it mirrors the way botanical trees grow on planet Earth: roots at the bottom and leaves at the top.
+If you want to show your phylogenetic trees upside down or left to right, it is as simple as setting `y = -y` or `x = y, y = x` in the ggplot aes().
+
+### Plotting recPhyloXML trees
+
+Reconciliated trees are trickier since we need to deal with both the species tree and the gene tree.
+Since the gene tree is "embedded" within the species tree, the species tree must have a thickness, and it must be large enough to contain all the gene nodes.
+recPhylo calculates the layout and still tries to give you all the flexibility of choosing your own geoms; however, the package is optimized for elbow layouts, and departing from this choice may require some extra tinkering so please do it at your own risk.
+In any case, it is likely that we'll have to play with the `branch_length_scale` and potentially `x_padding` arguments until we find good values.
+
+The layout is computed by the layout_recphylo() function, which returns a list of four elements: `spNodes`, `spEdges`, `recGeneNodes`, and `recGeneEdges`.
+Each of them is a data.frame with the layout merged with the custom annotation (if any).
+Species trees and recGene trees are phylogenies, so in principle they can be plotted on their own.
+However, the layout is calculated taking both of them into account.
+Here is how to plot them individually.
+
+```{r}
 
 recphylo_file <- system.file("extdata", "recphylo_example_1.xml", package = "recPhylo")
 recphylo_xml <- read_recPhyloXML(recphylo_file)
-recphylo_layout <- layout_recphylo(recphylo_xml, branch_length_scale = 3)
+recphylo_layout <- layout_recphylo(recphylo_xml, branch_length_scale = 5)
 
-ggplot() +
-  geom_diagonal(data = recphylo_layout$spEdges, aes(x, y, xend = xend, yend = yend), orientation = "y") +
-  geom_point(data = recphylo_layout$recGeneEdges, aes(xend, yend)) +
-  geom_text(data = recphylo_layout$recGeneEdges, aes(xend, yend, label = name)) +
-  geom_segment(data = recphylo_layout$recGeneEdges, aes(x, y, xend = xend, yend = yend, color = lineage, linetype = leg_type), show.legend = F, orientation = "x") +
-  scale_linetype_manual(values = c("loss_vertical" = 2, "transferBack" = 3), na.value = 1) +
-  theme_void() +
-  NULL
+sp_plot <- ggplot() +
+  geom_elbow(data = recphylo_layout$spEdges, aes(x, y, xend = xend, yend = yend))
+
+recGene_plot <- ggplot() +
+  geom_elbow(data = recphylo_layout$recGeneEdges, aes(x, y, xend = xend, yend = yend)) +
+  geom_point(data = recphylo_layout$recGeneEdges, aes(xend, yend))
+
+(sp_plot | recGene_plot)
 
 ```
 
-### Simple phylogeny objects
-
-Although the primary goal of the package was to plot reconciliated trees, for which there was no alternative in R, it is also possible to plot simple phylogenies.
+Putting them together results in the following plot,
 
 ```{r}
 
-library(recPhylo)
-library(ggplot2)
-
-phylo_file <- system.file("extdata", "phylo_example_1.xml", package = "recPhylo")
-phylo_xml <- read_phyloXML(phylo_file)[[1]]
-phylo_xml <- add_annot(phylo_xml, data.frame(
-  name = find_descendants(phylo_xml$clade, "Bacteria"),
-  is_bacterium = TRUE
-))
-phylo_layout <- layout_phylogeny(phylo_xml, branch_length_scale = 5)
-
 ggplot() +
-  geom_segment(data = phylo_layout$edges, aes(x, y, xend = xend, yend = yend, group = group, color = is_bacterium)) +
-  theme_void() +
-  NULL
-
-ggplot() +
-  ggforce::geom_diagonal(data = phylo_layout$edges, aes(x, y, xend = xend, yend = yend, group = group, color = is_bacterium), orientation = "y") +
-  theme_void() +
-  NULL
-
-ggplot() +
-  geom_elbow(data = phylo_layout$edges, aes(x, y, xend = xend, yend = yend, group = group, color = is_bacterium)) +
-  theme_void() +
-  NULL
+  geom_elbow(data = recphylo_layout$spEdges, aes(x, y, xend = xend, yend = yend)) +
+  geom_elbow(data = recphylo_layout$recGeneEdges, aes(x, y, xend = xend, yend = yend)) +
+  geom_point(data = recphylo_layout$recGeneEdges, aes(xend, yend))
 
 ```
+
+which we can customize as any other ggplot.
+Let's add some color and change the shape of the reconciliated gene nodes based on their event type (duplication, loss, transfer, speciation, ...).
+(Adding a manual scale is left as an exercise.)
+
+```{r}
+
+make_plot <- function(layout, polar = FALSE) {
+  p <- ggplot(layout$recGeneEdges) +
+    geom_elbow(data = layout$spEdges, aes(x, y, xend = xend, yend = yend)) +
+    geom_elbow(data = \(e) e[e$event_type != "transferBack", ], aes(x, y, xend = xend, yend = yend, color = lineage), show.legend = FALSE) +
+    ggforce::geom_diagonal(data = \(e) e[e$event_type == "transferBack", ], aes(x, y, xend = xend, yend = yend, color = lineage), linetype = "dashed", show.legend = FALSE) +
+    geom_point(data = layout$recGeneEdges, aes(xend, yend, shape = event_type)) +
+    geom_text(data = layout$spNodes[layout$spNodes$is_leaf == TRUE, ], aes(x, y, label = name), nudge_y = 1)
+  if (polar) {
+    p <- p + expand_limits(x = -1, y = -2) + coord_polar()
+  }
+  p
+}
+
+make_plot(recphylo_layout)
+
+```
+
+The argument `use_branch_length` is also supported by recphylo layouts.
+Here is the same plot in the three variants.
+
+```{r}
+
+(
+  make_plot(layout_recphylo(recphylo_xml, use_branch_length = FALSE, branch_length_scale = 5)) |
+  make_plot(layout_recphylo(recphylo_xml, use_branch_length = TRUE, branch_length_scale = 5)) |
+  make_plot(layout_recphylo(recphylo_xml, use_branch_length = 1, branch_length_scale = 5))
+) +
+  plot_layout(guide = "collect")
+
+```
+
+If you are prepared to spend some time tinkering with the parameters and staring at lots of horrible-looking plots, you can also try different geoms for reconciliated gene and species trees.
+Here are some examples.
+
+```{r}
+
+ggplot() +
+  ggforce::geom_diagonal(data = recphylo_layout$spEdges, aes(x, y, xend = xend, yend = yend), orientation = "y") +
+  # geom_point(data = recphylo_layout$recGeneEdges, aes(xend, yend)) +
+  geom_text(data = recphylo_layout$recGeneEdges, aes(xend, yend, label = name), vjust = 0) +
+  geom_segment(data = recphylo_layout$recGeneEdges, aes(x, y, xend = xend, yend = yend, color = lineage, linetype = event_type), show.legend = F, orientation = "x") +
+  scale_linetype_manual(values = c("loss" = 2, "transferBack" = 3), na.value = 1)
+
+```
+
+```{r}
+
+ggplot() +
+  geom_curve(data = recphylo_layout$spEdges[recphylo_layout$spEdges$side == "left", ], aes(x, y, xend = xend, yend = yend), curvature = -0.4) +
+  geom_curve(data = recphylo_layout$spEdges[recphylo_layout$spEdges$side == "right", ], aes(x, y, xend = xend, yend = yend), curvature = 0.4) +
+  geom_curve(data = recphylo_layout$spEdges[recphylo_layout$spEdges$side %in% c("cap", "root"), ], aes(x, y, xend = xend, yend = yend), curvature = 0) +
+  # geom_point(data = recphylo_layout$recGeneEdges, aes(xend, yend)) +
+  geom_text(data = recphylo_layout$recGeneEdges, aes(xend, yend, label = name), vjust = 0) +
+  geom_curve(data = recphylo_layout$recGeneEdges[recphylo_layout$recGeneEdges$side == "left", ], aes(x, y, xend = xend, yend = yend, color = lineage, linetype = event_type), show.legend = F, curvature = -0.4) +
+  geom_curve(data = recphylo_layout$recGeneEdges[recphylo_layout$recGeneEdges$side == "right", ], aes(x, y, xend = xend, yend = yend, color = lineage, linetype = event_type), show.legend = F, curvature = 0.4) +
+  geom_curve(data = recphylo_layout$recGeneEdges[recphylo_layout$recGeneEdges$side == "root", ], aes(x, y, xend = xend, yend = yend, color = lineage, linetype = event_type), show.legend = F, curvature = 0) +
+  scale_linetype_manual(values = c("loss" = 2, "transferBack" = 3), na.value = 1)
+
+```
+
+Last, here is another example showing how gene transfer to an unsampled species looks like.
 
 ```{r}
 
@@ -110,75 +419,16 @@ recphylo_file <- system.file("extdata", "recphylo_example_2.xml", package = "rec
 recphylo_xml <- read_recPhyloXML(recphylo_file) |>
   flip_sp_children("13")
 
-load_all()
-l <- RecPhyloLayout$new(recphylo_xml, branch_length_scale = 3, use_branch_length = FALSE)
-spEdges <- l$spLayout$edges
-geneNodes <- l$recGeneLayout$nodes
-geneEdges <- l$recGeneLayout$edges
+l <- layout_recphylo(recphylo_xml, branch_length_scale = 4, use_branch_length = 1)
 
-p <- ggplot() +
-  geom_elbow(data = spEdges, aes(x, y, xend = xend, yend = yend), lineend = "round", orientation = "y") +
-  geom_text(data = geneNodes, aes(x, y, label = name)) +
-  geom_elbow(data = geneEdges, aes(x, y, xend = xend, yend = yend, color = lineage, linetype = paste(event_type, leg_type, sep = "_")), lineend = "round", show.legend = F, orientation = "y") +
-  scale_linetype_manual(values = c("loss_vertical" = 2, "transferBack_lateral" = 4, "bifurcationOut_lateral" = 3), na.value = 1) +
-  # scale_y_reverse() +
-  # coord_radial() +
-  # coord_flip() +
-  # theme_void() +
-  NULL
-p
-ggsave("/tmp/plot.png")
-
-
-p <- ggplot() +
-  geom_segment(data = spEdges, aes(x, y, xend = xend, yend = yend), lineend = "round", orientation = "y") +
-  geom_text(data = geneNodes, aes(x, y, label = name)) +
-  geom_segment(data = geneEdges, aes(x, y, xend = xend, yend = yend, color = lineage, linetype = paste(event_type, leg_type, sep = "_")), lineend = "round", show.legend = F, orientation = "y") +
-  scale_linetype_manual(values = c("loss_vertical" = 2, "transferBack_lateral" = 4, "bifurcationOut_lateral" = 3), na.value = 1) +
-  # scale_y_reverse() +
-  # coord_radial() +
-  # coord_flip() +
-  # theme_void() +
-  NULL
-p
-ggsave("/tmp/plot.png")
-
-
-# This is pretty cool and new!
-p <- ggplot() +
-  geom_curve(data = spEdges[spEdges$xend >= spEdges$x, ], aes(x, y, xend = xend, yend = yend), lineend = "round", curvature = 0.3) +
-  geom_curve(data = spEdges[spEdges$xend < spEdges$x, ], aes(x, y, xend = xend, yend = yend), lineend = "round", curvature = -0.3) +
-  geom_text(data = geneNodes, aes(x, y, label = name)) +
-  geom_curve(data = geneEdges[geneEdges$xend >= geneEdges$x, ], aes(x, y, xend = xend, yend = yend, color = lineage, linetype = paste(event_type, leg_type, sep = "_")), lineend = "round", show.legend = F, curvature = 0.3) +
-  geom_curve(data = geneEdges[geneEdges$xend < geneEdges$x, ], aes(x, y, xend = xend, yend = yend, color = lineage, linetype = paste(event_type, leg_type, sep = "_")), lineend = "round", show.legend = F, curvature = -0.3) +
-  scale_linetype_manual(values = c("loss_vertical" = 2, "transferBack_lateral" = 4, "bifurcationOut_lateral" = 3), na.value = 1) +
-  # scale_y_reverse() +
-  # coord_radial() +
-  # coord_flip() +
-  # theme_void() +
-  NULL
-p
-ggsave("/tmp/plot.png")
-
-
-p <- l$testplot()
-ggsave("/tmp/plot.png")
-
-recphylo_file <- system.file("extdata", "recphylo_example_1.xml", package = "recPhylo")
-recphylo_xml <- read_recPhyloXML(recphylo_file)
-l <- RecPhyloLayout$new(recphylo_xml, branch_length_scale = 5)
-spEdges <- l$spLayout$edges
-geneNodes <- l$recGeneLayout$nodes
-geneEdges <- l$recGeneLayout$edges
 ggplot() +
-  geom_segment(data = spEdges, aes(x, y, xend = xend, yend = yend), lineend = "round", orientation = "y") +
-  # geom_text(data = geneNodes, aes(x, y, label = name)) +
-  geom_point(data = geneNodes, aes(x, y)) +
-  geom_segment(data = geneEdges, aes(x, y, xend = xend, yend = yend, color = lineage), show.legend = F, orientation = "y") +
-  # coord_polar() +
-  # coord_flip() +
-  # theme_void() +
-  NULL
+  geom_elbow(data = l$spEdges, aes(x, y, xend = xend, yend = yend), lineend = "round") +
+  geom_text(data = l$recGeneNodes, aes(x, y, label = name), vjust = 0) +
+  geom_elbow(data = l$recGeneEdges[! l$recGeneEdges$event_type %in% c("bifurcationOut", "transferBack"), ], aes(x, y, xend = xend, yend = yend, color = lineage, linetype = event_type, alpha = event_type), lineend = "round", show.legend = F) +
+  ggforce::geom_diagonal(data = l$recGeneEdges[l$recGeneEdges$event_type == "transferBack", ], aes(x, y, xend = xend, yend = yend, color = lineage, linetype = event_type), lineend = "round", show.legend = F, orientation = "y") +
+  geom_curve(data = l$recGeneEdges[l$recGeneEdges$event_type == "bifurcationOut", ], aes(x, y, xend = xend, yend = yend, color = lineage, linetype = event_type), lineend = "round", show.legend = F, curvature = 0.3) +
+  scale_linetype_manual(values = c("transferBack" = 4, "bifurcationOut" = 3), na.value = 1) +
+  scale_alpha_manual(values = c("loss" = 0.6), na.value = 1)
 
 ```
 
@@ -196,7 +446,6 @@ ggplot() +
 
 ## Bugs and missing features
 
-- bifurcationOut events are not supported (but planned)
 - We don't automatically scale the plot to make it look nicer (planned)
 - We make no attempt to minimise the edge crossings for lateral
   transfers (though you can manually swap left/right children to make the tree look better)

@@ -24,7 +24,7 @@
                     <speciations>1</speciations>
                 </events>
                 <clade>
-                    <name>B. subtilis</name>
+                    <name>B.subtilis</name>
                     <taxonomy>
                         <id provider="ncbi">1423</id>
                         <scientific_name>Bacillus subtilis</scientific_name>
@@ -35,7 +35,7 @@
                     </sequence>
                 </clade>
                 <clade>
-                    <name>E. coli</name>
+                    <name>E.coli</name>
                     <taxonomy>
                         <id provider="ncbi">562</id>
                         <scientific_name>Escherichia coli</scientific_name>
