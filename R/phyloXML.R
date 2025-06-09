@@ -473,7 +473,7 @@ import_branch_lengths.phyloXML_phylogeny <- function(x, phylo) {
     }
   })
   # Set the root branch length
-  x$clade$branch_length <- phylo$root.edge
+  x$clade$branch_length <- phylo$root.edge %||% NA
   x
 }
 

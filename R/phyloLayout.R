@@ -89,7 +89,6 @@ PhylogenyLayout <- R6::R6Class("PhylogenyLayout",
       } else {
         stop("Unsupported type for `use_branch_length`.")
       }
-      y_shift <- 0
       children <- lapply(seq_along(clade$clade), function(child_idx) {
         private$simple_phylo_layout(clade$clade[[child_idx]], child_idx, y)
       })
@@ -106,11 +105,17 @@ PhylogenyLayout <- R6::R6Class("PhylogenyLayout",
           y <- min(sapply(children, `[[`, "y")) - branch_length
         }
       }
+      # Update the side of children
+      children <- lapply(children, function(child) {
+        child$side <- if (child$x < x) "left" else "right"
+        child
+      })
       # Return the list
       l <- list(
         name = clade$name,
         child_idx = child_idx,
         is_leaf = is_leaf,
+        side = "root",
         x = x,
         y = y,
         branch_length = branch_length,
