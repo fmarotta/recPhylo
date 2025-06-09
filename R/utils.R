@@ -70,7 +70,10 @@ as.data.frame.phyloXML_layout <- function(cl) {
 #' @examples
 #' \dontrun{
 #' phylogeny <- example_phyloXML_phylogeny()
-#' layout <- data.frame(name = c("unnamed", "Octopus", "Bacteria", "E. coli", "B. subtilis"), position = c(100, 100, 200, 150, 250))
+#' layout <- data.frame(
+#'   name = c("unnamed", "Octopus", "Bacteria", "E. coli", "B. subtilis"),
+#'   position = c(100, 100, 200, 150, 250)
+#' )
 #' attr(phylogeny, "annot") <- data.frame(name = c("Octopus"), annotation = c("annot1"))
 #' merge_layout(phylogeny, layout)
 #' }
@@ -115,8 +118,8 @@ write_phyloXML <- function(tree, path) {
 }
 
 phylo_to_xml_clades <- function(parent_idx, tree) {
-  n_tips <- tree$Nnodes + 1 + is.rooted(tree)
-  parent <- read_xml("<clade></clade>")
+  n_tips <- tree$Nnodes + 1 + ape::is.rooted(tree)
+  parent <- xml2::read_xml("<clade></clade>")
   if (!is.null(tree$tip.label) && parent_idx <= length(tree$tip.label)) {
     xml2::xml_add_child(parent, "name", tree$tip.label[parent_idx])
   } else if (!is.null(tree$node.label) && parent_idx > n_tips) {

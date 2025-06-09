@@ -1,7 +1,7 @@
 Package: recPhylo
 Type: Package
 Title: Parse and plot trees from phyloXML and recPhyloXML Files
-Version: 0.1.0
+Version: 0.2.0
 Author: person("Federico", "Marotta", email = "federico.marotta@embl.de",
     role = c("aut", "cre"))
 Maintainer: Federico Marotta <federico.marotta@embl.de>
@@ -13,10 +13,10 @@ URL: https://github.com/fmarotta/recPhylo
 BugReports: https://github.com/fmarotta/recPhylo/issues
 Imports:
     xml2,
+    ggplot2,
     R6
 Suggests:
     covr,
-    ggplot2,
     testthat (>= 3.0.0),
     vdiffr
 License: MIT + file LICENSE

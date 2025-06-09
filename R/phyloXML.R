@@ -243,11 +243,11 @@ print.phyloXML_phylogeny <- function(phy, idx = NULL, ...) {
     cat("[[", idx, "]] ", sep = "")
   }
   cat("phyloXML_phylogeny object with ", length(leaf_status), " nodes (", sum(leaf_status), " leaves).\n", sep = "")
-  str(phy[fields])
+  utils::str(phy[fields])
   annot <- attr(phy, "annot", exact = TRUE)
   cat("Attributes:\n")
   if (!is.null(annot)) {
-    str(annot)
+    utils::str(annot)
   } else {
     cat("NULL\n")
   }
@@ -537,7 +537,7 @@ flip_children.phyloXML_clade <- function(x, name, perm = NULL) {
       nextperm(current_order)
     } else {
       stopifnot(is.numeric(perm))
-      stopifont(length(perm) == length(cl$clade))
+      stopifnot(length(perm) == length(cl$clade))
       perm
     }
     attr(cl, "children_permutation") <- new_order
