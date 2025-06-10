@@ -122,7 +122,8 @@ that define both data and aesthetics and shouldn't inherit behaviour from
 the default plot specification, e.g. \code{\link[ggplot2:borders]{borders()}}.}
 }
 \description{
-\code{geom_elbow()} creates elbow-shaped segments connecting two points by introducing a new intermediate point at the bend of the elbow.
+\code{geom_elbow()} creates elbow-shaped segments connecting two points by
+introducing a new intermediate point at the bend of the elbow.
 }
 \details{
 Both geoms draw a single segment/curve per case. See \code{geom_path()} if you
@@ -147,6 +148,7 @@ Learn more about setting these aesthetics in \code{vignette("ggplot2-specs")}.
 }
 
 \examples{
+library(ggplot2)
 df <- data.frame(x1 = 2.62, x2 = 3.57, y1 = 21.0, y2 = 15.0)
 ggplot(df) +
   geom_segment(aes(x = x1, y = y1, xend = x2, yend = y2, colour = "segment")) +
@@ -154,7 +156,13 @@ ggplot(df) +
   geom_elbow(aes(x = x1, y = y1, xend = x2, yend = y2, colour = "elbow"))
 
 ggplot(df) +
-  geom_elbow(aes(x = x1, y = y1, xend = x2, yend = y2), direction = "vh", arrow = arrow(type = "closed"), arrow.fill = "blue")
+  geom_elbow(
+    aes(x = x1, y = y1, xend = x2, yend = y2),
+    direction = "vh",
+    arrow = arrow(type = "closed"),
+    arrow.fill = "blue"
+  )
+
 }
 \seealso{
 \code{\link[ggplot2:geom_path]{geom_path()}} and \code{\link[ggplot2:geom_line]{geom_line()}} for multi-

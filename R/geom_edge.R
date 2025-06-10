@@ -25,7 +25,8 @@ GeomElbow <- ggplot2::ggproto("GeomElbow", ggplot2::GeomSegment,
 
 #' geom_elbow: Draw Elbow Segments
 #'
-#' `geom_elbow()` creates elbow-shaped segments connecting two points by introducing a new intermediate point at the bend of the elbow.
+#' `geom_elbow()` creates elbow-shaped segments connecting two points by
+#' introducing a new intermediate point at the bend of the elbow.
 #'
 #' @inherit ggplot2::geom_segment
 #'
@@ -33,6 +34,7 @@ GeomElbow <- ggplot2::ggproto("GeomElbow", ggplot2::GeomSegment,
 #'     'hv' for horizontal then vertical.
 #'
 #' @examples
+#' library(ggplot2)
 #' df <- data.frame(x1 = 2.62, x2 = 3.57, y1 = 21.0, y2 = 15.0)
 #' ggplot(df) +
 #'   geom_segment(aes(x = x1, y = y1, xend = x2, yend = y2, colour = "segment")) +
@@ -40,7 +42,15 @@ GeomElbow <- ggplot2::ggproto("GeomElbow", ggplot2::GeomSegment,
 #'   geom_elbow(aes(x = x1, y = y1, xend = x2, yend = y2, colour = "elbow"))
 #'
 #' ggplot(df) +
-#'   geom_elbow(aes(x = x1, y = y1, xend = x2, yend = y2), direction = "vh", arrow = arrow(type = "closed"), arrow.fill = "blue")
+#'   geom_elbow(
+#'     aes(x = x1, y = y1, xend = x2, yend = y2),
+#'     direction = "vh",
+#'     arrow = arrow(type = "closed"),
+#'     arrow.fill = "blue"
+#'   )
+#'
+#' @import ggplot2
+#'
 #' @export
 geom_elbow <- function(mapping = NULL, data = NULL, stat = "identity",
                        position = "identity", ..., direction = "hv", arrow = NULL,
