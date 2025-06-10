@@ -16,7 +16,8 @@ starting point is an XML file following either the
 [phyloXML](http://www.phyloxml.org/) or the [recPhyloXML
 format](http://phylariane.univ-lyon1.fr/recphyloxml/), which will be
 parsed into specific R objects. Dedicated `layout_*()` functions can
-convert these objects into data.frames ready to be used with ggplot.
+convert these objects into data.frames ready to be used with ggplot. See
+below for examples.
 
 Contrary to `ggtree` or `ggraph`, with this package you don’t get a plot
 directly from the tree object, but rather a pair of data.frames
@@ -42,7 +43,9 @@ geom_point() or geom_segment()). The advantages of this approach are:
 
 This package does not have as many features as `ggtree`. Use it if you
 are comfortable with `ggplot2` and like to have full control over your
-figures.
+figures. Disclaimer: the plots in this README are not meant to be
+particularly beautiful, they simply serve the purpose of illustrating
+the basic capabilities of the package.
 
 ## Installation
 
