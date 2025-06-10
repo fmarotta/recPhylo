@@ -499,7 +499,7 @@ ubl_const_plot <- ggplot() +
   ubl_false_plot |
   ubl_true_plot |
   ubl_const_plot
-) & theme_minimal() + theme(plot.title = element_text(hjust = 0.5))
+) & theme_minimal() + theme(plot.title = element_text(hjust = 0.5, size = 11))
 ```
 
 <img src="man/figures/README-unnamed-chunk-17-1.png" width="100%" />
@@ -616,7 +616,7 @@ Here is the same plot in the three variants.
   make_plot(layout_recphylo(recphylo_xml, use_branch_length = 1, branch_length_scale = 5), title = "use_branch_length = 1")
 ) +
   plot_layout(guide = "collect") &
-  theme(plot.title = element_text(hjust = 0.5))
+  theme(plot.title = element_text(hjust = 0.5, size = 11), legend.position = "bottom")
 ```
 
 <img src="man/figures/README-unnamed-chunk-21-1.png" width="100%" />
