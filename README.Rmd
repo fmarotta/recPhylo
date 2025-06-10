@@ -289,7 +289,7 @@ ubl_const_plot <- ggplot() +
   ubl_false_plot |
   ubl_true_plot |
   ubl_const_plot
-) & theme(plot.title = element_text(hjust = 0.5))
+) & theme_minimal() + theme(plot.title = element_text(hjust = 0.5))
 
 ```
 
@@ -297,7 +297,7 @@ ubl_const_plot <- ggplot() +
 - When `use_branch_length` is TRUE, the real branch lengths will be used.
 - When `use_branch_length` is a number, all branches will have that length.
 
-Furthermore, argument `branch_length_scale` can be set to a number and has the effect of multipling all branch lengths by that number.
+Furthermore, argument `branch_length_scale` can be set to a number and has the effect of multiplying all branch lengths by that number.
 The `x_padding` argument specifies the distance between the leaves in the x direction (by default it is `1`).
 
 You might be perplexed about the orientation of the trees, since it departs from the way phylogenetic trees are usually displayed.
@@ -346,18 +346,22 @@ ggplot() +
 ```
 
 which we can customize as any other ggplot.
+Depending on the position of the horizontal gene transfers, the plot might look confusing.
+That's because the `transferBack` event has the same $x$ coordinate of downstream events.
+This doesn't work well with the elbow geom, so I'd recommend using a different geom for these type of events.
 Let's add some color and change the shape of the reconciliated gene nodes based on their event type (duplication, loss, transfer, speciation, ...).
 (Adding a manual scale is left as an exercise.)
 
 ```{r}
 
-make_plot <- function(layout, polar = FALSE) {
+make_plot <- function(layout, polar = FALSE, title = NULL) {
   p <- ggplot(layout$recGeneEdges) +
     geom_elbow(data = layout$spEdges, aes(x, y, xend = xend, yend = yend)) +
     geom_elbow(data = \(e) e[e$event_type != "transferBack", ], aes(x, y, xend = xend, yend = yend, color = lineage), show.legend = FALSE) +
     ggforce::geom_diagonal(data = \(e) e[e$event_type == "transferBack", ], aes(x, y, xend = xend, yend = yend, color = lineage), linetype = "dashed", show.legend = FALSE) +
     geom_point(data = layout$recGeneEdges, aes(xend, yend, shape = event_type)) +
-    geom_text(data = layout$spNodes[layout$spNodes$is_leaf == TRUE, ], aes(x, y, label = name), nudge_y = 1)
+    geom_text(data = layout$spNodes[layout$spNodes$is_leaf == TRUE, ], aes(x, y, label = name), nudge_y = 1) +
+    labs(title = title)
   if (polar) {
     p <- p + expand_limits(x = -1, y = -2) + coord_polar()
   }
@@ -374,11 +378,12 @@ Here is the same plot in the three variants.
 ```{r}
 
 (
-  make_plot(layout_recphylo(recphylo_xml, use_branch_length = FALSE, branch_length_scale = 5)) |
-  make_plot(layout_recphylo(recphylo_xml, use_branch_length = TRUE, branch_length_scale = 5)) |
-  make_plot(layout_recphylo(recphylo_xml, use_branch_length = 1, branch_length_scale = 5))
+  make_plot(layout_recphylo(recphylo_xml, use_branch_length = FALSE, branch_length_scale = 5), title = "use_branch_length = FALSE") |
+  make_plot(layout_recphylo(recphylo_xml, use_branch_length = TRUE, branch_length_scale = 5), title = "use_branch_length = TRUE") |
+  make_plot(layout_recphylo(recphylo_xml, use_branch_length = 1, branch_length_scale = 5), title = "use_branch_length = 1")
 ) +
-  plot_layout(guide = "collect")
+  plot_layout(guide = "collect") &
+  theme(plot.title = element_text(hjust = 0.5))
 
 ```
 
@@ -388,25 +393,48 @@ Here are some examples.
 ```{r}
 
 ggplot() +
-  ggforce::geom_diagonal(data = recphylo_layout$spEdges, aes(x, y, xend = xend, yend = yend), orientation = "y") +
+  geom_curve(data = recphylo_layout$spEdges[recphylo_layout$spEdges$side == "left", ], aes(x, y, xend = xend, yend = yend), curvature = -0.4) +
+  geom_curve(data = recphylo_layout$spEdges[recphylo_layout$spEdges$side == "right", ], aes(x, y, xend = xend, yend = yend), curvature = 0.4) +
+  geom_curve(data = recphylo_layout$spEdges[recphylo_layout$spEdges$side %in% c("cap", "root"), ], aes(x, y, xend = xend, yend = yend), curvature = 0) +
   # geom_point(data = recphylo_layout$recGeneEdges, aes(xend, yend)) +
-  geom_text(data = recphylo_layout$recGeneEdges, aes(xend, yend, label = name), vjust = 0) +
-  geom_segment(data = recphylo_layout$recGeneEdges, aes(x, y, xend = xend, yend = yend, color = lineage, linetype = event_type), show.legend = F, orientation = "x") +
+  geom_text(data = recphylo_layout$recGeneEdges, aes(xend, yend, label = name), vjust = 0, angle = 30) +
+  geom_curve(data = recphylo_layout$recGeneEdges[recphylo_layout$recGeneEdges$side == "left", ], aes(x, y, xend = xend, yend = yend, color = lineage, linetype = event_type), show.legend = F, curvature = -0.4) +
+  geom_curve(data = recphylo_layout$recGeneEdges[recphylo_layout$recGeneEdges$side == "right", ], aes(x, y, xend = xend, yend = yend, color = lineage, linetype = event_type), show.legend = F, curvature = 0.4) +
+  geom_curve(data = recphylo_layout$recGeneEdges[recphylo_layout$recGeneEdges$side == "root", ], aes(x, y, xend = xend, yend = yend, color = lineage, linetype = event_type), show.legend = F, curvature = 0) +
   scale_linetype_manual(values = c("loss" = 2, "transferBack" = 3), na.value = 1)
 
 ```
 
 ```{r}
 
+# When using geom_diagonal or geom_segment for the species tree, a
+# different layout is required. Setting `speciation_y_increment = FALSE`
+# will make all speciation events aligned (at the same y) and internal
+# events (duplications, losses, transfers) are slanted towards the
+# parent.
+recphylo_layout_diagonal <- layout_recphylo(recphylo_xml, branch_length_scale = 5, speciation_y_increment = FALSE)
+
 ggplot() +
-  geom_curve(data = recphylo_layout$spEdges[recphylo_layout$spEdges$side == "left", ], aes(x, y, xend = xend, yend = yend), curvature = -0.4) +
-  geom_curve(data = recphylo_layout$spEdges[recphylo_layout$spEdges$side == "right", ], aes(x, y, xend = xend, yend = yend), curvature = 0.4) +
-  geom_curve(data = recphylo_layout$spEdges[recphylo_layout$spEdges$side %in% c("cap", "root"), ], aes(x, y, xend = xend, yend = yend), curvature = 0) +
-  # geom_point(data = recphylo_layout$recGeneEdges, aes(xend, yend)) +
-  geom_text(data = recphylo_layout$recGeneEdges, aes(xend, yend, label = name), vjust = 0) +
-  geom_curve(data = recphylo_layout$recGeneEdges[recphylo_layout$recGeneEdges$side == "left", ], aes(x, y, xend = xend, yend = yend, color = lineage, linetype = event_type), show.legend = F, curvature = -0.4) +
-  geom_curve(data = recphylo_layout$recGeneEdges[recphylo_layout$recGeneEdges$side == "right", ], aes(x, y, xend = xend, yend = yend, color = lineage, linetype = event_type), show.legend = F, curvature = 0.4) +
-  geom_curve(data = recphylo_layout$recGeneEdges[recphylo_layout$recGeneEdges$side == "root", ], aes(x, y, xend = xend, yend = yend, color = lineage, linetype = event_type), show.legend = F, curvature = 0) +
+  ggforce::geom_diagonal(data = recphylo_layout_diagonal$spEdges, aes(x, y, xend = xend, yend = yend), orientation = "y") +
+  # geom_point(data = recphylo_layout_diagonal$recGeneEdges, aes(xend, yend)) +
+  geom_text(data = recphylo_layout_diagonal$recGeneEdges, aes(xend, yend, label = name), vjust = 0) +
+  geom_segment(data = recphylo_layout_diagonal$recGeneEdges, aes(x, y, xend = xend, yend = yend, color = lineage, linetype = event_type), show.legend = F) +
+  scale_linetype_manual(values = c("loss" = 2, "transferBack" = 3), na.value = 1)
+
+ggplot() +
+  ggforce::geom_diagonal(data = recphylo_layout_diagonal$spEdges, aes(x, y, xend = xend, yend = yend), orientation = "y") +
+  # geom_point(data = recphylo_layout_diagonal$recGeneEdges, aes(xend, yend)) +
+  geom_text(data = recphylo_layout_diagonal$recGeneEdges, aes(xend, yend, label = name), vjust = 0) +
+  geom_curve(data = recphylo_layout_diagonal$recGeneEdges[recphylo_layout_diagonal$recGeneEdges$side == "left", ], aes(x, y, xend = xend, yend = yend, color = lineage, linetype = event_type), show.legend = F, curvature = -0.3) +
+  geom_curve(data = recphylo_layout_diagonal$recGeneEdges[recphylo_layout_diagonal$recGeneEdges$side == "right", ], aes(x, y, xend = xend, yend = yend, color = lineage, linetype = event_type), show.legend = F, curvature = 0.3) +
+  geom_curve(data = recphylo_layout_diagonal$recGeneEdges[recphylo_layout_diagonal$recGeneEdges$side == "root", ], aes(x, y, xend = xend, yend = yend, color = lineage, linetype = event_type), show.legend = F, curvature = 0) +
+  scale_linetype_manual(values = c("loss" = 2, "transferBack" = 3), na.value = 1)
+
+ggplot() +
+  geom_segment(data = recphylo_layout_diagonal$spEdges, aes(x, y, xend = xend, yend = yend), orientation = "y") +
+  # geom_point(data = recphylo_layout_diagonal$recGeneEdges, aes(xend, yend)) +
+  geom_text(data = recphylo_layout_diagonal$recGeneEdges, aes(xend, yend, label = name), vjust = 0) +
+  ggforce::geom_diagonal(data = recphylo_layout_diagonal$recGeneEdges, aes(x, y, xend = xend, yend = yend, color = lineage, linetype = event_type), show.legend = F, orientation = "y") +
   scale_linetype_manual(values = c("loss" = 2, "transferBack" = 3), na.value = 1)
 
 ```
@@ -426,11 +454,26 @@ ggplot() +
   geom_text(data = l$recGeneNodes, aes(x, y, label = name), vjust = 0) +
   geom_elbow(data = l$recGeneEdges[! l$recGeneEdges$event_type %in% c("bifurcationOut", "transferBack"), ], aes(x, y, xend = xend, yend = yend, color = lineage, linetype = event_type, alpha = event_type), lineend = "round", show.legend = F) +
   ggforce::geom_diagonal(data = l$recGeneEdges[l$recGeneEdges$event_type == "transferBack", ], aes(x, y, xend = xend, yend = yend, color = lineage, linetype = event_type), lineend = "round", show.legend = F, orientation = "y") +
-  geom_curve(data = l$recGeneEdges[l$recGeneEdges$event_type == "bifurcationOut", ], aes(x, y, xend = xend, yend = yend, color = lineage, linetype = event_type), lineend = "round", show.legend = F, curvature = 0.3) +
+  geom_curve(data = l$recGeneEdges[l$recGeneEdges$event_type == "bifurcationOut", ], aes(x, y, xend = xend, yend = yend, color = lineage, linetype = event_type), lineend = "round", show.legend = F, curvature = 0.2) +
   scale_linetype_manual(values = c("transferBack" = 4, "bifurcationOut" = 3), na.value = 1) +
   scale_alpha_manual(values = c("loss" = 0.6), na.value = 1)
 
 ```
+
+### Plots with annotation
+
+The recPhylo layouts are simply data.frames containing the coordinates of the elements to be plotted.
+You are encouraged to explore the layout data.frames and get an idea of what columns are available.
+The package tries to place the nodes in convenient and predictable places.
+For example, all the leaves, by default, sit at integer $x$ coordinates.
+In a PhyloXML plot, the first clade is at $x = 0$, and subsequent leaves are at $x = 1$, $x = 2$, and so on.
+In a recPhyloXML plot, the species tree starts at $x = 0$, and the gene tree leaves occupy integer coordinates that increase by 1 unit for every leaf; there will be extra space due to the thickness of the species tree and the `x_padding`, the gap between species.
+With the `use_branch_lengths = FALSE` layout, the leaves all sit at $y = 0$, making it especially easy to add annotation to the top of the tree, aligned with the leaves.
+Adding custom annotation with the `add_annot()`, `add_sp_annot()`, or `add_recGene_annot()` methods will make extra columns available directly in the layout data.frames.
+You are then free to plot them using any ggplot geom of your choosing.
+Another strategy for adding annotation is to use the patchwork package: just make sure to use the same coordinates as in the tree layout, and potentially use expand_limits() to match the scales of the tree and annotation plots.
+
+TODO: show examples.
 
 ## Features
 
