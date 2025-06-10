@@ -4,30 +4,33 @@ skip_if_not_installed("vdiffr")
 test_that("the plots with `branch_length` look fine", {
   ex <- example_recPhyloXML()
   vdiffr::expect_doppelganger(
-    "scale = 3, padding = 3, y_shift = T, branch_length = T",
+    "scale = 3, padding = 3, y_shift = T, branch_length = T, sp_y_inc = T",
     RecPhyloLayout$new(ex,
       branch_length_scale = 3,
       x_padding = 3,
       use_y_shift = T,
-      use_branch_length = T
+      use_branch_length = T,
+      speciation_y_increment = T
     )$testplot()
   )
   vdiffr::expect_doppelganger(
-    "scale = 4, padding = 3, y_shift = T, branch_length = T",
+    "scale = 4, padding = 3, y_shift = T, branch_length = T, sp_y_inc = T",
     RecPhyloLayout$new(ex,
       branch_length_scale = 4,
       x_padding = 3,
       use_y_shift = T,
-      use_branch_length = T
+      use_branch_length = T,
+      speciation_y_increment = T
     )$testplot()
   )
   vdiffr::expect_doppelganger(
-    "scale = 5, padding = 3, y_shift = T, branch_length = T",
+    "scale = 5, padding = 3, y_shift = T, branch_length = T, sp_y_inc = T",
     RecPhyloLayout$new(ex,
       branch_length_scale = 5,
       x_padding = 3,
       use_y_shift = T,
-      use_branch_length = T
+      use_branch_length = T,
+      speciation_y_increment = T
     )$testplot()
   )
 })
