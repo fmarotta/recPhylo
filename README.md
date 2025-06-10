@@ -653,7 +653,7 @@ recphylo_layout_diagonal <- layout_recphylo(recphylo_xml, branch_length_scale = 
 ggplot() +
   ggforce::geom_diagonal(data = recphylo_layout_diagonal$spEdges, aes(x, y, xend = xend, yend = yend), orientation = "y") +
   # geom_point(data = recphylo_layout_diagonal$recGeneEdges, aes(xend, yend)) +
-  geom_text(data = recphylo_layout_diagonal$recGeneEdges, aes(xend, yend, label = name), vjust = 0) +
+  geom_text(data = recphylo_layout_diagonal$recGeneEdges, aes(xend, yend, label = name), vjust = 0, angle = 30) +
   geom_segment(data = recphylo_layout_diagonal$recGeneEdges, aes(x, y, xend = xend, yend = yend, color = lineage, linetype = event_type), show.legend = F) +
   scale_linetype_manual(values = c("loss" = 2, "transferBack" = 3), na.value = 1)
 ```
@@ -665,7 +665,7 @@ ggplot() +
 ggplot() +
   ggforce::geom_diagonal(data = recphylo_layout_diagonal$spEdges, aes(x, y, xend = xend, yend = yend), orientation = "y") +
   # geom_point(data = recphylo_layout_diagonal$recGeneEdges, aes(xend, yend)) +
-  geom_text(data = recphylo_layout_diagonal$recGeneEdges, aes(xend, yend, label = name), vjust = 0) +
+  geom_text(data = recphylo_layout_diagonal$recGeneEdges, aes(xend, yend, label = name), vjust = 0, angle = 30) +
   geom_curve(data = recphylo_layout_diagonal$recGeneEdges[recphylo_layout_diagonal$recGeneEdges$side == "left", ], aes(x, y, xend = xend, yend = yend, color = lineage, linetype = event_type), show.legend = F, curvature = -0.3) +
   geom_curve(data = recphylo_layout_diagonal$recGeneEdges[recphylo_layout_diagonal$recGeneEdges$side == "right", ], aes(x, y, xend = xend, yend = yend, color = lineage, linetype = event_type), show.legend = F, curvature = 0.3) +
   geom_curve(data = recphylo_layout_diagonal$recGeneEdges[recphylo_layout_diagonal$recGeneEdges$side == "root", ], aes(x, y, xend = xend, yend = yend, color = lineage, linetype = event_type), show.legend = F, curvature = 0) +
@@ -679,7 +679,7 @@ ggplot() +
 ggplot() +
   geom_segment(data = recphylo_layout_diagonal$spEdges, aes(x, y, xend = xend, yend = yend), orientation = "y") +
   # geom_point(data = recphylo_layout_diagonal$recGeneEdges, aes(xend, yend)) +
-  geom_text(data = recphylo_layout_diagonal$recGeneEdges, aes(xend, yend, label = name), vjust = 0) +
+  geom_text(data = recphylo_layout_diagonal$recGeneEdges, aes(xend, yend, label = name), vjust = 0, angle = 30) +
   ggforce::geom_diagonal(data = recphylo_layout_diagonal$recGeneEdges, aes(x, y, xend = xend, yend = yend, color = lineage, linetype = event_type), show.legend = F, orientation = "y") +
   scale_linetype_manual(values = c("loss" = 2, "transferBack" = 3), na.value = 1)
 #> Warning in geom_segment(data = recphylo_layout_diagonal$spEdges, aes(x, :
