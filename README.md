@@ -499,7 +499,7 @@ ubl_const_plot <- ggplot() +
   ubl_false_plot |
   ubl_true_plot |
   ubl_const_plot
-) & theme_minimal() + theme(plot.title = element_text(hjust = 0.5, size = 11))
+) & theme_minimal() + theme(plot.title = element_text(hjust = 0.5, size = 9))
 ```
 
 <img src="man/figures/README-unnamed-chunk-17-1.png" width="100%" />
@@ -616,7 +616,7 @@ Here is the same plot in the three variants.
   make_plot(layout_recphylo(recphylo_xml, use_branch_length = 1, branch_length_scale = 5), title = "use_branch_length = 1")
 ) +
   plot_layout(guide = "collect") &
-  theme(plot.title = element_text(hjust = 0.5, size = 11), legend.position = "bottom")
+  theme(plot.title = element_text(hjust = 0.5, size = 9), legend.position = "bottom")
 ```
 
 <img src="man/figures/README-unnamed-chunk-21-1.png" width="100%" />
@@ -677,13 +677,11 @@ ggplot() +
 ``` r
 
 ggplot() +
-  geom_segment(data = recphylo_layout_diagonal$spEdges, aes(x, y, xend = xend, yend = yend), orientation = "y") +
+  geom_segment(data = recphylo_layout_diagonal$spEdges, aes(x, y, xend = xend, yend = yend)) +
   # geom_point(data = recphylo_layout_diagonal$recGeneEdges, aes(xend, yend)) +
   geom_text(data = recphylo_layout_diagonal$recGeneEdges, aes(xend, yend, label = name), vjust = 0, angle = 30) +
   ggforce::geom_diagonal(data = recphylo_layout_diagonal$recGeneEdges, aes(x, y, xend = xend, yend = yend, color = lineage, linetype = event_type), show.legend = F, orientation = "y") +
   scale_linetype_manual(values = c("loss" = 2, "transferBack" = 3), na.value = 1)
-#> Warning in geom_segment(data = recphylo_layout_diagonal$spEdges, aes(x, :
-#> Ignoring unknown parameters: `orientation`
 ```
 
 <img src="man/figures/README-unnamed-chunk-23-3.png" width="100%" />
