@@ -1,7 +1,7 @@
 Package: recPhylo
 Type: Package
 Title: Parse and plot trees from phyloXML and recPhyloXML Files
-Version: 0.2.0
+Version: 0.2.1
 Author: person("Federico", "Marotta", email = "federico.marotta@embl.de",
     role = c("aut", "cre"))
 Maintainer: Federico Marotta <federico.marotta@embl.de>

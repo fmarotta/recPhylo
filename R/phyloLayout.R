@@ -1,10 +1,10 @@
 #' @export
 PhylogenyLayout <- R6::R6Class("PhylogenyLayout",
   public = list(
-    initialize = function(phylogeny, use_branch_length = TRUE, x_padding = 1, branch_length_scale = 1) {
+    initialize = function(phylogeny, use_branch_length = TRUE, x_padding = 1, branch_length_scale = 1, missing_branch_length_value = 1) {
       stopifnot("phyloXML_phylogeny" %in% class(phylogeny))
       private$.phylogeny <- phylogeny
-      private$set_config(use_branch_length, x_padding, branch_length_scale)
+      private$set_config(use_branch_length, x_padding, branch_length_scale, missing_branch_length_value)
       self$redraw()
     },
     redraw = function() {
@@ -55,7 +55,7 @@ PhylogenyLayout <- R6::R6Class("PhylogenyLayout",
     warnings = list(missing_branch_length = TRUE),
     max_x = 0,
     layout_phylogeny = list(),
-    set_config = function(use_branch_length, x_padding, branch_length_scale) {
+    set_config = function(use_branch_length, x_padding, branch_length_scale, missing_branch_length_value) {
       if (! (is.numeric(use_branch_length) || is.logical(use_branch_length))) {
         stop("`use_branch_length` can only be a numeric or logical value.")
       } else if (length(use_branch_length) != 1) {
@@ -64,7 +64,8 @@ PhylogenyLayout <- R6::R6Class("PhylogenyLayout",
       private$config <- list(
         use_branch_length = use_branch_length,
         x_padding = x_padding,
-        branch_length_scale = branch_length_scale
+        branch_length_scale = branch_length_scale,
+        missing_branch_length_value = missing_branch_length_value
       )
     },
     simple_phylo_layout = function(clade, child_idx = 0, y_start = 0) {
@@ -75,10 +76,10 @@ PhylogenyLayout <- R6::R6Class("PhylogenyLayout",
       } else if (isTRUE(private$config$use_branch_length)) {
         branch_length <- clade$branch_length
         if (is.na(branch_length)) {
-          branch_length <- 1
+          branch_length <- private$config$missing_branch_length_value
           if (isTRUE(private$warnings$missing_branch_length)) {
             private$warnings$missing_branch_length <- FALSE
-            warning("No branch length was found in clade '", clade$name, "'. Setting it to 1 automatically.", call. = FALSE)
+            warning("No branch length was found in clade '", clade$name, "'. Setting it to ", private$config$missing_branch_length_value, ".", call. = FALSE)
           }
         }
         branch_length <- branch_length * private$config$branch_length_scale

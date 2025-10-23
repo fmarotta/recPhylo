@@ -110,3 +110,20 @@ test_that("bifurcationOut is rendered correctly", {
   )
 })
 
+skip_if_not_installed("vdiffr")
+test_that("missing_branch_length_value is configurable", {
+  ex_file <- system.file(
+    "extdata",
+    "speciation.xml",
+    package = "recPhylo",
+    mustWork = TRUE
+  )
+  ex <- read_recPhyloXML(ex_file)
+  vdiffr::expect_doppelganger(
+    "missing_branch_length_value = 5",
+    RecPhyloLayout$new(ex,
+      missing_branch_length_value = 5
+    )$testplot()
+  )
+})
+

@@ -3,10 +3,10 @@
 # @export
 RecPhyloLayout <- R6::R6Class("RecPhyloLayout",
   public = list(
-    initialize = function(recPhylo, use_branch_length = TRUE, x_padding = 1, branch_length_scale = 1, use_y_shift = TRUE, speciation_y_increment = TRUE) {
+    initialize = function(recPhylo, use_branch_length = TRUE, x_padding = 1, branch_length_scale = 1, missing_branch_length_value = 1, use_y_shift = TRUE, speciation_y_increment = TRUE) {
       stopifnot("recPhyloXML" %in% class(recPhylo))
       private$.recPhylo <- recPhylo
-      private$set_config(use_branch_length, x_padding, branch_length_scale, use_y_shift, speciation_y_increment)
+      private$set_config(use_branch_length, x_padding, branch_length_scale, missing_branch_length_value, use_y_shift, speciation_y_increment)
       species_names <- traverse_clades(recPhylo$spTree$clade, function(x) x$name)
       private$internal_events <- sapply(species_names, function(sp) {
         lapply(recPhylo$recGeneTrees, function(rgt) {
@@ -105,7 +105,7 @@ RecPhyloLayout <- R6::R6Class("RecPhyloLayout",
     layout_spTree = list(),
     layout_recGeneTrees = list(),
     inner_layout = list(),
-    set_config = function(use_branch_length, x_padding, branch_length_scale, use_y_shift, speciation_y_increment) {
+    set_config = function(use_branch_length, x_padding, branch_length_scale, missing_branch_length_value, use_y_shift, speciation_y_increment) {
       if (! (is.numeric(use_branch_length) || is.logical(use_branch_length))) {
         stop("`use_branch_length` can only be a numeric or logical value.")
       } else if (length(use_branch_length) != 1) {
@@ -115,6 +115,7 @@ RecPhyloLayout <- R6::R6Class("RecPhyloLayout",
         use_branch_length = use_branch_length,
         x_padding = x_padding,
         branch_length_scale = branch_length_scale,
+        missing_branch_length_value = missing_branch_length_value,
         use_y_shift = use_y_shift,
         speciation_y_increment = speciation_y_increment
       )
@@ -132,10 +133,10 @@ RecPhyloLayout <- R6::R6Class("RecPhyloLayout",
           clade$branch_length * private$config$branch_length_scale
         } else {
           if (isTRUE(private$warnings$missing_branch_length)) {
-            warning("No branch length was found in clade ", clade$name, ". Setting it to 1 automatically.", call. = FALSE)
+            warning("No branch length was found in clade ", clade$name, ". Setting it to ", private$config$missing_branch_length_value, ".", call. = FALSE)
             private$warnings$missing_branch_length <- FALSE
           }
-          private$config$branch_length_scale
+          private$config$missing_branch_length_value * private$config$branch_length_scale
         }
       } else if (isFALSE(private$config$use_branch_length)) {
         private$config$branch_length_scale
